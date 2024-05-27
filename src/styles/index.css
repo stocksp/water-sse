@@ -1,0 +1,15 @@
+:root {
+  --g-color-black: #000;
+  --g-color-white: #fff;
+  --g-color-grey-50: #f6f6f6;
+  --g-color-grey-600: #636363;
+  --g-color-grey-700: #4d4d4d;
+  --g-color-grey-900: #0f0f0f;
+
+  --g-font-family: ui-monospace, Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono",
+    "Roboto Mono", "Oxygen Mono", "Ubuntu Monospace", "Source Code Pro",
+    "Fira Mono", "Droid Sans Mono", "Courier New", monospace;
+
+  font-size: 12px;
+}
+
