@@ -58,52 +58,49 @@ powerDocs = [{
     eventSourceRef.current.onmessage = (event) => {
       console.log("new data received")
       const newLogs = JSON.parse(event.data)
-
-      // If data is not initialized, initialize it with the new data
-      if (!data) {
-        console.log("no data so its all the data!")
-        setData(convert(newLogs))
-        return
-      }
-
       // Logs for debugging
       console.log("theData power", newLogs.powerDocs.length ? newLogs.powerDocs[0].when : "empty")
       console.log("theData dist", newLogs.distDocs.length ? newLogs.distDocs[0].when : "empty")
 
-      // Check for new distDocs
-      if (newLogs.distDocs.length > 0) {
-        console.log("distDoc is ", newLogs.distDocs[0])
-        const obj = { ...newLogs.distDocs[0] }
-        setData((prevState) => ({
-          ...prevState,
-          distdocs: [...prevState.distdocs, obj],
-        }))
-      }
+      setData((prevState) => {
+        // we have data and are just appending one piece of data
+        // check for any of our properties
+        if (prevState) {
+          // Check for new distDocs
+          if (newLogs.distDocs.length > 0) {
+            console.log("distDoc is ", newLogs.distDocs[0])
+            const obj = { ...newLogs.distDocs[0] }
+            return [...prevState, obj]
+          }
+          // Check for new powerDocs
+          if (newLogs.powerDocs.length > 0) {
+            console.log("powerdoc is ", newLogs.powerDocs[0])
+            const pump = newLogs.powerDocs[0].pump
+            const isOn = newLogs.powerDocs[0].state === "on"
 
-      // Check for new powerDocs
-      if (newLogs.powerDocs.length > 0) {
-        console.log("powerdoc is ", newLogs.powerDocs[0])
-        const pump = newLogs.powerDocs[0].pump
-        const isOn = newLogs.powerDocs[0].state === "on"
+            if (isOn && pump === "pressure") {
+              const obj = { ...newLogs.powerDocs[0], state: "Pressure running" }
+              return [...prevState, obj]
 
-        if (isOn && pump === "pressure") {
-          const obj = { ...newLogs.powerDocs[0], state: "Pressure running" }
-          setData((prevState) => ({
-            ...prevState,
-            powerdocs: [...prevState.powerdocs, obj],
-          }))
-        } else if (!isOn && pump === "pressure") {
-          const obj = { ...newLogs.powerDocs[0], state: "Pressure ran" }
-          setData((prevState) => ({
-            ...prevState,
-            powerdocs: [
-              ...prevState.powerdocs.filter((doc) => doc.state !== "Pressure running"),
-              obj,
-            ],
-          }))
-          console.log("pressure off", data)
+              // we need to remove Pressure running
+              // we only keep one record of when it finnished and
+              // how long it ran .. see filter
+            } else if (!isOn && pump === "pressure") {
+              const obj = { ...newLogs.powerDocs[0], state: "Pressure ran" }
+              return [...prevState.filter((doc) => doc.state !== "Pressure running"), obj]
+            } else if (isOn && pump === "well") {
+              const obj = { ...newLogs.powerDocs[0], state: "Well running" }
+              return [...prevState, obj]
+            } else if (!isOn && pump === "well") {
+              const obj = { ...newLogs.powerDocs[0], state: "Well ran" }
+              return [...prevState, obj]
+            }
+          }
+        } else {
+          // first batch of data concat and fix state
+          return convert(newLogs)
         }
-      }
+      })
     }
   }
 
