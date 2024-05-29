@@ -58,38 +58,52 @@ powerDocs = [{
     eventSourceRef.current.onmessage = (event) => {
       console.log("new data received")
       const newLogs = JSON.parse(event.data)
-      console.log("theData", newLogs.powerDocs.length ? newLogs.powerDocs[0].when : "empty")
-      processRaw(newLogs)
-      console.log(
-        "refCurrent",
-        rawDataRef.current,
-        rawDataRef.current.powerDocs.length ? rawDataRef.current.powerDocs[0].when : "empty"
-      )
-      const data = convert(JSON.parse(JSON.stringify(rawDataRef.current)))
 
-      setData(data)
-      /* if (newLogs.length > 0) {
-      // Sort newLogs by timestamp
-      newLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-      const transformedLogs = newLogs.map((log) => ({
-        key: log.ID,
-        timestamp: format(new Date(log.timestamp), "dd MMM HH:mm:ss"),
-        message: log.message,
-        system: log.system || false,
-      }))
-      setLogs((prevLogs) => {
-        const existingIds = new Set(prevLogs.map((log) => log.key))
-        const filteredNewLogs = transformedLogs.filter(
-          (log) => !existingIds.has(log.key)
-        )
-        const combinedLogs = [...prevLogs, ...filteredNewLogs]
-        // Drop oldest logs if the total exceeds 1000
-        if (combinedLogs.length > 1000) {
-          return combinedLogs.slice(combinedLogs.length - 500)
+      // If data is not initialized, initialize it with the new data
+      if (!data) {
+        console.log("no data so its all the data!")
+        setData(convert(newLogs))
+        return
+      }
+
+      // Logs for debugging
+      console.log("theData power", newLogs.powerDocs.length ? newLogs.powerDocs[0].when : "empty")
+      console.log("theData dist", newLogs.distDocs.length ? newLogs.distDocs[0].when : "empty")
+
+      // Check for new distDocs
+      if (newLogs.distDocs.length > 0) {
+        console.log("distDoc is ", newLogs.distDocs[0])
+        const obj = { ...newLogs.distDocs[0] }
+        setData((prevState) => ({
+          ...prevState,
+          distdocs: [...prevState.distdocs, obj],
+        }))
+      }
+
+      // Check for new powerDocs
+      if (newLogs.powerDocs.length > 0) {
+        console.log("powerdoc is ", newLogs.powerDocs[0])
+        const pump = newLogs.powerDocs[0].pump
+        const isOn = newLogs.powerDocs[0].state === "on"
+
+        if (isOn && pump === "pressure") {
+          const obj = { ...newLogs.powerDocs[0], state: "Pressure running" }
+          setData((prevState) => ({
+            ...prevState,
+            powerdocs: [...prevState.powerdocs, obj],
+          }))
+        } else if (!isOn && pump === "pressure") {
+          const obj = { ...newLogs.powerDocs[0], state: "Pressure ran" }
+          setData((prevState) => ({
+            ...prevState,
+            powerdocs: [
+              ...prevState.powerdocs.filter((doc) => doc.state !== "Pressure running"),
+              obj,
+            ],
+          }))
+          console.log("pressure off", data)
         }
-        return combinedLogs
-      })
-    } */
+      }
     }
   }
 
@@ -112,7 +126,7 @@ powerDocs = [{
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
       }
-      console.log('useEffect terminating?')
+      console.log("useEffect terminating?")
     }
   }, [])
 
