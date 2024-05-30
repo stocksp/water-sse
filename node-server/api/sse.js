@@ -3,7 +3,24 @@ import clientPromise from "../mongo.js"
 import { format, differenceInMinutes, differenceInHours, isAfter } from "date-fns"
 import { logger } from "hono/logger"
 import { timing } from "hono/timing"
+import fs from "fs"
+import path from "path"
+import { fileURLToPath } from 'url';
+// Define __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+// Function to write data to a file
+const writeDataToFile = (data) => {
+  const filePath = path.join(__dirname, "data_logs.json")
+  fs.appendFile(filePath, `${data}\n`, (err) => {
+    if (err) {
+      console.error("Error writing to file", err)
+    } else {
+      console.log("Data successfully written to file")
+    }
+  })
+}
 const activeConnections = {}
 export const sseEndpoint = (app) => {
   app.use("/api/sse", logger())
@@ -52,6 +69,9 @@ export const sseEndpoint = (app) => {
               await stream.sleep(10000)
               continue
             }
+            // const dataString = JSON.stringify(newWaterData)
+            // // Write data to file
+            // writeDataToFile(dataString)
             await stream.writeSSE({
               data: JSON.stringify(newWaterData),
               event: "message",

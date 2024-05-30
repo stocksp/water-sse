@@ -43,26 +43,37 @@ powerDocs = [{
 
   const connectToStream = () => {
     console.log("starting new connection to data stream", effectRan.current)
-    eventSourceRef.current = new EventSource(`${import.meta.env.VITE_NODE_SERVER_URL}/api/sse`)
+    const es = new EventSource(`${import.meta.env.VITE_NODE_SERVER_URL}/api/sse`)
 
-    eventSourceRef.current.onopen = () => {
+    es.onopen = () => {
       console.log("data stream connection opened")
       setConnectionStatus("open")
     }
 
-    eventSourceRef.current.onerror = (error) => {
+    es.onerror = (error) => {
       console.log("data stream connection failed:", error)
       setConnectionStatus("closed")
     }
 
-    eventSourceRef.current.onmessage = (event) => {
+    es.onmessage = (event) => {
       console.log("new data received")
       const newLogs = JSON.parse(event.data)
       // Logs for debugging
       console.log("theData power", newLogs.powerDocs.length ? newLogs.powerDocs[0].when : "empty")
       console.log("theData dist", newLogs.distDocs.length ? newLogs.distDocs[0].when : "empty")
+      //  setData(convert(newLogs))
 
       setData((prevState) => {
+        console.log({ prevState })
+        
+          const convertedLogs = convert(newLogs)
+          console.log({ convertedLogs })
+          return convertedLogs
+        
+      })
+    }
+    eventSourceRef.current = es
+    /*      setData((prevState) => {
         // we have data and are just appending one piece of data
         // check for any of our properties
         if (prevState) {
@@ -96,12 +107,11 @@ powerDocs = [{
               return [...prevState, obj]
             }
           }
-        } else {
+        } else { 
           // first batch of data concat and fix state
           return convert(newLogs)
-        }
-      })
-    }
+        
+      })*/
   }
 
   const closeConnection = () => {
@@ -114,7 +124,21 @@ powerDocs = [{
 
   useEffect(() => {
     console.log("useEffect", effectRan.current)
-    if (!effectRan.current) {
+    fetch("/data_logs.json")
+    .then(response => response.text()) // Fetch as text
+    .then(text => {
+      const jsonString = text.trim(); // Trim any leading/trailing whitespace
+      const data = JSON.parse(jsonString); // Parse the JSON string
+      setData(convert(data));
+      /* setData((prevState) => {
+        console.log({ prevState })
+          const convertedLogs = convert(data)
+          console.log({ convertedLogs })
+          return convertedLogs
+      }) */
+    })
+    .catch(error => console.error('Error loading data logs:', error));
+    /*  if (!effectRan.current) {
       effectRan.current = true
       connectToStream()
     }
@@ -124,7 +148,7 @@ powerDocs = [{
         eventSourceRef.current.close()
       }
       console.log("useEffect terminating?")
-    }
+    } */
   }, [])
 
   const processRaw = (theData) => {
