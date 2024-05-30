@@ -65,11 +65,10 @@ powerDocs = [{
 
       setData((prevState) => {
         console.log({ prevState })
-        
-          const convertedLogs = convert(newLogs)
-          console.log({ convertedLogs })
-          return convertedLogs
-        
+
+        const convertedLogs = convert(newLogs)
+        console.log({ convertedLogs })
+        return convertedLogs
       })
     }
     eventSourceRef.current = es
@@ -123,32 +122,23 @@ powerDocs = [{
   }
 
   useEffect(() => {
-    console.log("useEffect", effectRan.current)
-    fetch("/data_logs.json")
-    .then(response => response.text()) // Fetch as text
-    .then(text => {
-      const jsonString = text.trim(); // Trim any leading/trailing whitespace
-      const data = JSON.parse(jsonString); // Parse the JSON string
-      setData(convert(data));
-      /* setData((prevState) => {
-        console.log({ prevState })
-          const convertedLogs = convert(data)
-          console.log({ convertedLogs })
-          return convertedLogs
-      }) */
-    })
-    .catch(error => console.error('Error loading data logs:', error));
-    /*  if (!effectRan.current) {
-      effectRan.current = true
-      connectToStream()
+    const fetchData = async () => {
+      fetch("/data_logs.json")
+        .then((response) => response.text()) // Fetch as text
+        .then((text) => {
+          const jsonString = text.trim() // Trim any leading/trailing whitespace
+          const data = JSON.parse(jsonString) // Parse the JSON string
+          // setData(convert(data));
+          setData((prevState) => {
+            console.log({ prevState })
+            const convertedLogs = convert(data)
+            console.log({ convertedLogs })
+            return convertedLogs
+          })
+        })
+        .catch((error) => console.error("Error loading data logs:", error)) // Functional state update
     }
-    return () => {
-      effectRan.current = false
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close()
-      }
-      console.log("useEffect terminating?")
-    } */
+    fetchData()
   }, [])
 
   const processRaw = (theData) => {
