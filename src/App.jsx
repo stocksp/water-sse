@@ -347,7 +347,7 @@ powerDocs = [{
     })
     console.log("groups", groups)
   }
-
+  if (data) console.log("Data to Render")
   return (
     <div>
       <h1 className="text-center">
@@ -478,7 +478,10 @@ powerDocs = [{
           )}
         </Container>
       ) : (
-        <div> NO Data </div>
+        <>
+          {console.log("NO Data")}
+          <div>NO Data</div>
+        </>
       )}
     </div>
   )
