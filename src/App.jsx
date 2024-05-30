@@ -26,6 +26,7 @@ function App() {
   const rawDataRef = useRef(null)
   const eventSourceRef = useRef(null)
   const effectRan = useRef(false)
+  const firstLoadComplete = useRef(false)
   // for well report
   let groups = []
 
@@ -127,19 +128,25 @@ powerDocs = [{
         .then((response) => response.text()) // Fetch as text
         .then((text) => {
           const jsonString = text.trim() // Trim any leading/trailing whitespace
-          const data = JSON.parse(jsonString) // Parse the JSON string
+          const dataFromFile = JSON.parse(jsonString) // Parse the JSON string
+          console.log({ dataFromFile })
           // setData(convert(data));
           setData((prevState) => {
             console.log({ prevState })
-            const convertedLogs = convert(data)
+            const convertedLogs = convert(dataFromFile)
             console.log({ convertedLogs })
             return convertedLogs
           })
         })
         .catch((error) => console.error("Error loading data logs:", error)) // Functional state update
     }
-    fetchData()
-  }, [])
+    if (firstLoadComplete.current) {
+      return
+    } else {
+      firstLoadComplete.current = true
+      fetchData()
+    }
+  }, [firstLoadComplete])
 
   const processRaw = (theData) => {
     // if not the first load append the data
