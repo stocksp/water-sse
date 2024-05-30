@@ -63,17 +63,7 @@ powerDocs = [{
       console.log("theData power", newLogs.powerDocs.length ? newLogs.powerDocs[0].when : "empty")
       console.log("theData dist", newLogs.distDocs.length ? newLogs.distDocs[0].when : "empty")
       //  setData(convert(newLogs))
-
       setData((prevState) => {
-        console.log({ prevState })
-
-        const convertedLogs = convert(newLogs)
-        console.log({ convertedLogs })
-        return convertedLogs
-      })
-    }
-    eventSourceRef.current = es
-    /*      setData((prevState) => {
         // we have data and are just appending one piece of data
         // check for any of our properties
         if (prevState) {
@@ -107,11 +97,12 @@ powerDocs = [{
               return [...prevState, obj]
             }
           }
-        } else { 
+        } else {
           // first batch of data concat and fix state
           return convert(newLogs)
-        
-      })*/
+        }
+      })
+    }
   }
 
   const closeConnection = () => {
@@ -123,28 +114,11 @@ powerDocs = [{
   }
 
   useEffect(() => {
-    const fetchData = async () => {
-      fetch("/data_logs.json")
-        .then((response) => response.text()) // Fetch as text
-        .then((text) => {
-          const jsonString = text.trim() // Trim any leading/trailing whitespace
-          const dataFromFile = JSON.parse(jsonString) // Parse the JSON string
-          console.log({ dataFromFile })
-          // setData(convert(data));
-          setData((prevState) => {
-            console.log({ prevState })
-            const convertedLogs = convert(dataFromFile)
-            console.log({ convertedLogs })
-            return convertedLogs
-          })
-        })
-        .catch((error) => console.error("Error loading data logs:", error)) // Functional state update
-    }
     if (firstLoadComplete.current) {
       return
     } else {
       firstLoadComplete.current = true
-      fetchData()
+      connectToStream()
     }
   }, [firstLoadComplete])
 
