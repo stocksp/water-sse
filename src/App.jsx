@@ -21,8 +21,8 @@ function makeTime(seconds) {
 }
 function App() {
   const [doStream, setDoStream] = useState(false)
-  const data = useStore((state) => state.data);
-  const setData = useStore((state) => state.setData);
+  const data = useStore((state) => state.data)
+  const setData = useStore((state) => state.setData)
   const [connectionStatus, setConnectionStatus] = useState("connecting")
   const [dataToUse, setDataToUse] = useState("all")
   const rawDataRef = useRef(null)
@@ -122,9 +122,42 @@ powerDocs = [{
       return
     } else {
       firstLoadComplete.current = true
-      connectToStream()
+      console.log("running useEffect")
+      const es = new EventSource(`${import.meta.env.VITE_NODE_SERVER_URL}/api/sse`)
+
+      es.onmessage = (event) => {
+        const newLogs = JSON.parse(event.data)
+
+        if (!data.length) {
+          console.log("no data so its all the data!")
+          setData(newLogs)
+          return
+        }
+
+        console.log("theData power", newLogs.powerDocs.length ? newLogs.powerDocs[0].when : "empty")
+        console.log("theData dist", newLogs.distDocs.length ? newLogs.distDocs[0].when : "empty")
+
+        // Update the state with the new logs
+        setData(newLogs)
+      }
+      es.onopen = () => {
+        console.log("data stream connection opened")
+        setConnectionStatus("open")
+      }
+
+      es.onerror = (error) => {
+        console.log("data stream connection failed:", error)
+        setConnectionStatus("closed")
+        closeConnection()
+      }
     }
-  }, [firstLoadComplete])
+
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+      }
+    }
+  }, [data, setData])
 
   const processRaw = (theData) => {
     // if not the first load append the data
@@ -159,7 +192,7 @@ powerDocs = [{
   }
   // from Water app
   function currentDistance() {
-    if (!data[0]?.distance) return 0
+    if (!data.length) return 0
     return data.find((v) => v.distance).distance
   }
   function isWellrunning() {
@@ -232,7 +265,7 @@ powerDocs = [{
   let useThis
   let tableHeader3 = "Dist/ Time"
   if (dataToUse === "all") {
-    useThis = data ? data.filter((d) => (d.voltage ? false : true)) : data
+    useThis = data.length ? data.filter((d) => (d.voltage ? false : true)) : data
   }
   if (dataToUse === "well") {
     useThis = data.filter((d) => d.pump === "well")
@@ -351,7 +384,7 @@ powerDocs = [{
     })
     console.log("groups", groups)
   }
-  if (data.length) console.log("Data to Render", data[0])
+  if (data.length) console.log("Data to Render", data[0].distance, data[0].when)
   return (
     <div>
       <h1 className="text-center">
