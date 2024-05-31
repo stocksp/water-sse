@@ -21,7 +21,8 @@ function makeTime(seconds) {
 }
 function App() {
   const [doStream, setDoStream] = useState(false)
-  const { data, setData } = useStore.getState()
+  const data = useStore((state) => state.data);
+  const setData = useStore((state) => state.setData);
   const [connectionStatus, setConnectionStatus] = useState("connecting")
   const [dataToUse, setDataToUse] = useState("all")
   const rawDataRef = useRef(null)
@@ -350,7 +351,7 @@ powerDocs = [{
     })
     console.log("groups", groups)
   }
-  if (data.length) console.log("Data to Render")
+  if (data.length) console.log("Data to Render", data[0])
   return (
     <div>
       <h1 className="text-center">
