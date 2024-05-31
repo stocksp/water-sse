@@ -11,6 +11,7 @@ import Form from "react-bootstrap/Form"
 import Table from "react-bootstrap/Table"
 
 import convert from "./libs/convertToPower.js"
+import useStore from "./libs/store.js"
 
 function doFormat(theDate) {
   return format(theDate, "MMM d, h:mm:ss a")
@@ -20,7 +21,7 @@ function makeTime(seconds) {
 }
 function App() {
   const [doStream, setDoStream] = useState(false)
-  const [data, setData] = useState(false)
+  const { data, setData } = useStore.getState()
   const [connectionStatus, setConnectionStatus] = useState("connecting")
   const [dataToUse, setDataToUse] = useState("all")
   const rawDataRef = useRef(null)
@@ -62,8 +63,10 @@ powerDocs = [{
       // Logs for debugging
       console.log("theData power", newLogs.powerDocs.length ? newLogs.powerDocs[0].when : "empty")
       console.log("theData dist", newLogs.distDocs.length ? newLogs.distDocs[0].when : "empty")
-      //  setData(convert(newLogs))
-      setData((prevState) => {
+
+      setData(newLogs)
+
+      /* setData((prevState) => {
         // we have data and are just appending one piece of data
         // check for any of our properties
         if (prevState) {
@@ -100,8 +103,8 @@ powerDocs = [{
         } else {
           // first batch of data concat and fix state
           return convert(newLogs)
-        }
-      })
+        } 
+      })*/
     }
   }
 
@@ -347,7 +350,7 @@ powerDocs = [{
     })
     console.log("groups", groups)
   }
-  if (data) console.log("Data to Render")
+  if (data.length) console.log("Data to Render")
   return (
     <div>
       <h1 className="text-center">
