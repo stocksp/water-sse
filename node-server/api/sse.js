@@ -142,6 +142,7 @@ const getWaterData = async (c, lookBackTime) => {
     let message
     if (error instanceof Error) message = error.message
     else message = String(error)
+    console.log("bad news in mongo", message)
     return { message: "error", Error: message }
   }
 }

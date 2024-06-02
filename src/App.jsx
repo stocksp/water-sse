@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react"
 import { format, differenceInMinutes, differenceInHours, isAfter } from "date-fns"
 //import reactLogo from "./assets/react.svg";
-import "./App.css"
+//import "./App.css"
 //import Header from "components/header"
+import "./styles/water.css"
 
 import Container from "react-bootstrap/Container"
 import Row from "react-bootstrap/Row"
@@ -12,6 +13,7 @@ import Table from "react-bootstrap/Table"
 
 import convert from "./libs/convertToPower.js"
 import useStore from "./libs/store.js"
+import WellReport from "./components/well-report.jsx"
 
 function doFormat(theDate) {
   return format(theDate, "MMM d, h:mm:ss a")
@@ -43,71 +45,6 @@ powerDocs = [{
   runTime: 56,
   pump: "pressure",
 }] */
-
-  const connectToStream = () => {
-    console.log("starting new connection to data stream", effectRan.current)
-    const es = new EventSource(`${import.meta.env.VITE_NODE_SERVER_URL}/api/sse`)
-
-    es.onopen = () => {
-      console.log("data stream connection opened")
-      setConnectionStatus("open")
-    }
-
-    es.onerror = (error) => {
-      console.log("data stream connection failed:", error)
-      setConnectionStatus("closed")
-    }
-
-    es.onmessage = (event) => {
-      console.log("new data received")
-      const newLogs = JSON.parse(event.data)
-      // Logs for debugging
-      console.log("theData power", newLogs.powerDocs.length ? newLogs.powerDocs[0].when : "empty")
-      console.log("theData dist", newLogs.distDocs.length ? newLogs.distDocs[0].when : "empty")
-
-      setData(newLogs)
-
-      /* setData((prevState) => {
-        // we have data and are just appending one piece of data
-        // check for any of our properties
-        if (prevState) {
-          // Check for new distDocs
-          if (newLogs.distDocs.length > 0) {
-            console.log("distDoc is ", newLogs.distDocs[0])
-            const obj = { ...newLogs.distDocs[0] }
-            return [...prevState, obj]
-          }
-          // Check for new powerDocs
-          if (newLogs.powerDocs.length > 0) {
-            console.log("powerdoc is ", newLogs.powerDocs[0])
-            const pump = newLogs.powerDocs[0].pump
-            const isOn = newLogs.powerDocs[0].state === "on"
-
-            if (isOn && pump === "pressure") {
-              const obj = { ...newLogs.powerDocs[0], state: "Pressure running" }
-              return [...prevState, obj]
-
-              // we need to remove Pressure running
-              // we only keep one record of when it finnished and
-              // how long it ran .. see filter
-            } else if (!isOn && pump === "pressure") {
-              const obj = { ...newLogs.powerDocs[0], state: "Pressure ran" }
-              return [...prevState.filter((doc) => doc.state !== "Pressure running"), obj]
-            } else if (isOn && pump === "well") {
-              const obj = { ...newLogs.powerDocs[0], state: "Well running" }
-              return [...prevState, obj]
-            } else if (!isOn && pump === "well") {
-              const obj = { ...newLogs.powerDocs[0], state: "Well ran" }
-              return [...prevState, obj]
-            }
-          }
-        } else {
-          // first batch of data concat and fix state
-          return convert(newLogs)
-        } 
-      })*/
-    }
-  }
 
   const closeConnection = () => {
     if (eventSourceRef.current) {
@@ -159,37 +96,6 @@ powerDocs = [{
     }
   }, [data, setData])
 
-  const processRaw = (theData) => {
-    // if not the first load append the data
-    if (rawDataRef.current === null) {
-      rawDataRef.current = theData
-    } else {
-      // TOTO append the new to the old
-      if (theData.distDocs.length > 0) {
-        rawDataRef.current.distDocs.unshift(...theData.distDocs)
-      }
-      if (theData.powerDocs.length > 0) {
-        rawDataRef.current.powerDocs.unshift(...theData.powerDocs)
-      }
-    }
-  }
-
-  const mostRecentWhen = () => {
-    if (data) {
-      const distWhen = data.distDocs.length > 0 ? new Date(data.distDocs[0].when) : null
-      const powerWhen = data.powerDocs.length > 0 ? new Date(data.powerDocs[0].when) : null
-
-      if (distWhen && powerWhen) {
-        return distWhen > powerWhen ? data.distDocs[0].when : data.powerDocs[0].when
-      } else if (distWhen) {
-        return data.distDocs[0].when
-      } else if (powerWhen) {
-        return data.powerDocs[0].when
-      } else {
-        return "no data"
-      }
-    } else return "no data"
-  }
   // from Water app
   function currentDistance() {
     if (!data.length) return 0
@@ -276,13 +182,6 @@ powerDocs = [{
     tableHeader3 = "Time"
   }
 
-  /*  if (dataToUse === "climate") {
-    router.push("/climate")
-    return null
-  } */
-  if (dataToUse === "voltage") {
-    useThis = data.filter((d) => (d.voltage ? true : false))
-  }
   // table data rows
   let rows = []
   let wellRunTimeData = []
@@ -309,7 +208,7 @@ powerDocs = [{
           <td key={3}>{dist}</td>
         </tr>
       )
-      if (dataToUse === "well") {
+      if (dataToUse === "well" || dataToUse === "all") {
         wellRunTimeData.push({ what, when: r.when, dist })
         //console.table(wellRunTimeData);
       }
@@ -394,126 +293,32 @@ powerDocs = [{
         <span className="mediumIcon">💦</span>
         <span className="tinyIcon">💦</span>
       </h1>
-      <button onClick={() => connectToStream()}>{doStream ? "stop" : "go"}</button>
       {data && data.length > 0 ? (
-        <Container>
-          <Form>
-            <div key="inline-radio" className="mb-3">
-              <Form.Label>What to Show! &nbsp;</Form.Label>
-              <Form.Check
-                inline
-                label="All"
-                name="all"
-                type="radio"
-                id="all"
-                onChange={onRadio}
-                checked={dataToUse === "all"}
-              />
-              <Form.Check
-                inline
-                label="well"
-                name="well"
-                type="radio"
-                id="well"
-                onChange={onRadio}
-                checked={dataToUse === "well"}
-              />
-              <Form.Check
-                inline
-                label="pressure"
-                name="pressure"
-                type="radio"
-                id="pressure"
-                onChange={onRadio}
-                checked={dataToUse === "pressure"}
-              />
-              <Form.Check
-                inline
-                label="voltage"
-                name="voltage"
-                type="radio"
-                id="voltage"
-                onChange={onRadio}
-                checked={dataToUse === "voltage"}
-              />
-              <Form.Check
-                inline
-                label="climate"
-                name="climate"
-                type="radio"
-                id="climate"
-                onChange={onRadio}
-                checked={dataToUse === "climate"}
-              />
-            </div>
-          </Form>
-
-          <Row>
-            <Col md={{ span: 10, offset: 2 }}>
-              <h3>
-                Current well distance <strong>{currentDistance()}</strong>{" "}
-              </h3>
-            </Col>
-          </Row>
-          <Row>
-            <Col md={{ span: 10, offset: 2 }}>{isWellrunning()}</Col>
-          </Row>
-          <Row>
-            <Col md={{ span: 10, offset: 2 }}>{isPressurerunning()}</Col>
-          </Row>
-          <Row>
-            <Col md={{ span: 10, offset: 2 }}>{waterUsedLast(120)}</Col>
-          </Row>
-          <Row>
-            <Col md={{ span: 10, offset: 2 }}>{waterUsedLast(60)}</Col>
-          </Row>
-          <Row>
-            <Col md={{ span: 10, offset: 2 }}>{waterUsedLast(30)}</Col>
-          </Row>
-          {groups.length > 0 ? (
-            <>
-              <h3 className="text-center">Pumping Stats</h3>
-              <Table striped bordered hover size="sm">
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Fragments</th>
-                    <th>start-end</th>
-                    <th>Hours since last pump</th>
-                    <th>When ended</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {groups.map((r, i) => {
-                    return (
-                      <tr key={i} style={getBGColor(r)}>
-                        <td key={1}>{r.time}</td>
-                        <td key={2}>{r.frags}</td>
-                        <td key={3}>{r.dists}</td>
-                        <td key={4}>{r.sinceLastPump}</td>
-                        <td key={5}>{doFormat(r.when)}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </Table>
-            </>
-          ) : null}
-          {dataToUse === "well" ? (
-            <History />
-          ) : (
-            <Table striped bordered hover size="sm">
-              <thead>
-                <tr>
-                  <th>What</th>
-                  <th>When</th>
-                  <th>{tableHeader3}</th>
-                </tr>
-              </thead>
-              <tbody>{rows}</tbody>
-            </Table>
-          )}
-        </Container>
+        <div>
+          <h3 className="text-center">
+            Current well distance <strong>{currentDistance()}</strong>{" "}
+          </h3>
+          {isWellrunning()}
+          {isPressurerunning()}
+          <div class="container">
+            {dataToUse === "all" ? (
+              <div class="column">
+                <table striped bordered hover size="sm">
+                  <thead>
+                    <tr>
+                      <th>What</th>
+                      <th>When</th>
+                      <th>{tableHeader3}</th>
+                    </tr>
+                  </thead>
+                  <tbody>{rows}</tbody>
+                </table>
+              </div>
+            ) : null}
+            {groups.length > 0 ? <WellReport groups={groups} /> : null}
+          </div>
+          )
+        </div>
       ) : (
         <>
           {console.log("NO Data")}
