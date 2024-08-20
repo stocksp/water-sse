@@ -1,0 +1,1 @@
+import { MONGO_URI } from '$env/static/private';
