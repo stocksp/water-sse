@@ -1,85 +1,179 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-  
-	let messages: string[] = [];
+	import { writable } from 'svelte/store';
+	import convertToPower from '$lib/convertToPower';
+
+	let messages = writable<string[]>([]);
+	let activeConnections = writable<number>(0);
+	let connectionId = writable<string | null>(null);
+	let uiData = $state<UIData[]>([]);
+
 	let eventSource: EventSource;
-	let connectionId: string | null = null;
-	let activeConnections: number = 0;
-  
+
 	function handleMessage(event: MessageEvent) {
-    console.log('Received SSE message:', event.data);
-    
-    let data: any;
-    try {
-      data = JSON.parse(event.data);
-      console.log('Successfully parsed JSON data:', data);
-    } catch (error) {
-      console.log('Failed to parse as JSON. Raw data:', event.data);
-      console.log('Parse error:', error);
-      data = event.data;
-    }
-    
-    if (typeof data === 'object') {
-      if (data.message === 'initial_data') {
-        const waterData: WaterData = data.data;
-        console.log('Received initial water data:', waterData);
-        messages = [`distDocs: ${waterData.distDocs.length}, powerDocs: ${waterData.powerDocs.length}`];
-      } else if (data.message === 'new_data') {
-        const waterData: WaterData = data.data;
-        console.log('Received new water data:', waterData);
-        messages = [...messages, `distDocs: ${waterData.distDocs.length}, powerDocs: ${waterData.powerDocs.length}`];
-      } else if (data.message === 'connection_status') {
-        activeConnections = data.activeConnections;
-        console.log('Updated active connections:', activeConnections);
-        if (data.status === 'connected') {
-          connectionId = data.id;
-          console.log('Set connection ID:', connectionId);
-        } else if (data.status === 'client_connected') {
-          console.log('New client connected. Total connections:', activeConnections);
-        } else if (data.status === 'client_disconnected') {
-          console.log('A client disconnected. Total connections:', activeConnections);
-        }
-      }
-    } else if (typeof data === 'string') {
-      console.log('Received string data:', data);
-      // Handle any remaining string messages if necessary
-    }
-    
-    console.log('Updated messages:', messages);
-  }
-  
-	onMount(() => {
-	  eventSource = new EventSource('/api/sse');
-	  eventSource.onmessage = handleMessage;
-  
-	  // Ping the server every 20 seconds to keep the connection alive
-	  const pingInterval = setInterval(() => {
-		if (connectionId) {
-		  fetch('/api/sse', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ connectionId })
-		  });
+		//console.log('Received SSE message:', event.data);
+
+		let data: any;
+		try {
+			data = JSON.parse(event.data);
+		} catch (error) {
+			console.log('Failed to parse as JSON. Raw data:', event.data);
+			console.log('Parse error:', error);
+			data = event.data;
 		}
-	  }, 20000);
-  
-	  return () => {
-		clearInterval(pingInterval);
-	  };
+
+		if (typeof data === 'object') {
+			if (data.message === 'initial_data') {
+				//console.log('Successfully parsed and convert JSON data:', convertToPower(data.data));
+				uiData = convertToPower(data.data);
+				const waterData: WaterData = data.data;
+				console.log('Received initial water data:', waterData);
+				messages.set([
+					`distDocs: ${waterData.distDocs.length}, powerDocs: ${waterData.powerDocs.length}`
+				]);
+			} else if (data.message === 'new_data') {
+				const waterData: WaterData = data.data;
+				console.log('Received new water data:', waterData);
+				/* messages.update((msgs) => [
+					...msgs,
+					`distDocs: ${waterData.distDocs.length}, powerDocs: ${waterData.powerDocs.length}`
+				]); */
+				const newData = convertToPower(data.data);
+				uiData.unshift(...newData);
+			} else if (data.message === 'connection_status') {
+				activeConnections.set(data.activeConnections);
+				console.log('Updated active connections:', data.activeConnections);
+				if (data.status === 'connected') {
+					connectionId.set(data.id);
+					console.log('Set connection ID:', data.id);
+				} else if (data.status === 'client_connected') {
+					console.log('New client connected. Total connections:', data.activeConnections);
+				} else if (data.status === 'client_disconnected') {
+					console.log('A client disconnected. Total connections:', data.activeConnections);
+				}
+			}
+		} else if (typeof data === 'string') {
+			console.log('Received string data:', data);
+			// Handle any remaining string messages if necessary
+		}
+
+		console.log('Updated messages:', $messages);
+	}
+
+	onMount(() => {
+		eventSource = new EventSource('/api/sse');
+		eventSource.onopen = () => {
+			console.log('SSE connection opened');
+		};
+		eventSource.onerror = (err) => {
+			console.error('SSE connection error:', err);
+		};
+		eventSource.onmessage = handleMessage;
+
+		// Ping the server every 20 seconds to keep the connection alive
+		const pingInterval = setInterval(() => {
+			if ($connectionId) {
+				fetch('/api/sse', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ connectionId: $connectionId })
+				});
+			}
+		}, 20000);
+
+		return () => {
+			clearInterval(pingInterval);
+			if (eventSource) {
+				eventSource.close();
+			}
+		};
 	});
-  
+
 	onDestroy(() => {
-	  if (eventSource) {
-		eventSource.close();
-	  }
+		if (eventSource) {
+			eventSource.close();
+		}
 	});
-  </script>
-  
-  <h1>SSE Messages</h1>
-  <h3>Active Connections: {activeConnections}</h3>
-  <ul>
-	{#each messages as message}
-	  <li>{message}</li>
-	{/each}
-  </ul>
-  
+	function makeTime(seconds: number) {
+		return (seconds / 60).toFixed(1) + ' mins';
+	}
+
+	const getBGColor = (data: any) => {
+		switch (data.pump) {
+			case 'well':
+				return `background-color: rgba(255, 99, 71, 0.5)`;
+			case 'pressure':
+				return `background-color: rgb(173, 175, 204)`;
+			default:
+				return ``;
+		}
+	};
+	function getWhat(r: any) {
+		return r.distance ? 'Distance' : r.state ? r.state : 'Voltage';
+	}
+	function doTd(r: any) {
+		if (r.distance) {
+			return r.distance;
+		} else if (r.voltage) {
+			return r.voltage;
+		} else if (r.runTime) {
+			return makeTime(r.runTime);
+		} else if (r.state === 'Well running') {
+			return r.state;
+		} else {
+			return '-----';
+		}
+	}
+	function doFormat(theDate: Date) {
+		const options = {
+			month: 'short' as 'short' | 'numeric' | '2-digit' | 'long' | 'narrow',
+			day: 'numeric' as 'numeric' | '2-digit',
+			hour: 'numeric' as 'numeric' | '2-digit',
+			minute: 'numeric' as 'numeric' | '2-digit',
+			second: 'numeric' as 'numeric' | '2-digit',
+			hour12: true
+		};
+
+		return theDate.toLocaleString('en-US', options);
+	}
+</script>
+
+<h1>SSE Messages</h1>
+<h3>Active Connections: {$activeConnections}</h3>
+<div>
+	<h1 class="text-center">
+		<span class="tinyIcon">💦</span>
+		<span class="mediumIcon">💦</span>
+		💦Water Report💦
+		<span class="mediumIcon">💦</span>
+		<span class="tinyIcon">💦</span>
+	</h1>
+	{#if uiData.length > 0}
+		<div>
+			<div class="container">
+				<div class="column">
+					<table>
+						<thead>
+							<tr>
+								<th>What</th>
+								<th>When</th>
+								<th>Dist/ Time</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each uiData as r, i (i)}
+								<tr style={getBGColor(r)}>
+									<td>{getWhat(r)}</td>
+									<td>{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</td>
+									<td>{doTd(r)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	{:else}
+		<div>NO Data</div>
+	{/if}
+</div>

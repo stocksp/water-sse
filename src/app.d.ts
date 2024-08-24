@@ -9,14 +9,25 @@ declare global {
 		// interface Platform {}
 	}
 
+	
+	interface DistDocDb {
+		distance: number;
+		when: string;
+	}
 	interface DistDoc {
 		distance: number;
 		when: Date;
 	}
-
 	interface PowerDoc {
 		state: string;
 		when: Date;
+		pump: string;
+		runTime?: number;
+	}
+	type UIData = Array<PowerDoc | DistDoc>;
+	interface PowerDocDb {
+		state: string;
+		when: string;
 		pump: string;
 		runTime?: number;
 	}
@@ -25,6 +36,12 @@ declare global {
 		message: string;
 		distDocs: DistDoc[];
 		powerDocs: PowerDoc[];
+		Error?: string;
+	}
+	interface WaterDataDb {
+		message: string;
+		distDocs: DistDocDb[];
+		powerDocs: PowerDocDb[];
 		Error?: string;
 	}
 

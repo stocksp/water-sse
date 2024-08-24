@@ -1,4 +1,3 @@
-// src/routes/api/sse/+server.ts
 import { type RequestHandler } from '@sveltejs/kit';
 import { getWaterData } from '$lib/server/getWaterData'; // Adjust the import path as necessary
 
@@ -123,68 +122,69 @@ function stopIntervals() {
 }
 
 export const GET: RequestHandler = () => {
-    const connectionId = (connectionCounter++).toString();
-  
-    const stream = new ReadableStream({
-      start(controller) {
-        connections.set(connectionId, { controller, lastPing: Date.now() });
-        
-        if (connections.size === 1) {
-          startIntervals();
-        }
-  
-        // Send connection status to the new client
-        controller.enqueue(
-          `data: ${JSON.stringify({
-            message: 'connection_status',
-            id: connectionId,
-            activeConnections: connections.size,
-            status: 'connected'
-          })}\n\n`
-        );
-        
-        // Notify all clients about the new connection
-        sendSSEMessage(JSON.stringify({
-          message: 'connection_status',
-          activeConnections: connections.size,
-          status: 'client_connected'
-        }));
-        
-        // Send saved data to new client
-        if (savedWaterData.distDocs.length > 0 || savedWaterData.powerDocs.length > 0) {
-          controller.enqueue(`data: ${JSON.stringify({
-            message: 'initial_data',
-            data: savedWaterData
-          })}\n\n`);
-        }
-  
-        return () => {
-          connections.delete(connectionId);
-          // Notify all remaining clients about the closed connection
-          sendSSEMessage(JSON.stringify({
-            message: 'connection_status',
-            activeConnections: connections.size,
-            status: 'client_disconnected'
-          }));
-        };
-      },
-      cancel() {
-        connections.delete(connectionId);
-        if (connections.size === 0) {
-          stopIntervals();
-        }
-      }
-    });
-  
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-      }
-    });
-  };
-  
+	const connectionId = (connectionCounter++).toString();
+
+	const stream = new ReadableStream({
+		start(controller) {
+			connections.set(connectionId, { controller, lastPing: Date.now() });
+
+			if (connections.size === 1) {
+				startIntervals();
+			}
+
+			// Send connection status to the new client
+			controller.enqueue(
+				`data: ${JSON.stringify({
+					message: 'connection_status',
+					id: connectionId,
+					activeConnections: connections.size,
+					status: 'connected'
+				})}\n\n`
+			);
+
+			// Notify all clients about the new connection
+			sendSSEMessage(
+				JSON.stringify({
+					message: 'connection_status',
+					activeConnections: connections.size,
+					status: 'client_connected'
+				})
+			);
+
+			// Send saved data to new client
+			if (savedWaterData.distDocs.length > 0 || savedWaterData.powerDocs.length > 0) {
+				controller.enqueue(
+					`data: ${JSON.stringify({
+						message: 'initial_data',
+						data: savedWaterData
+					})}\n\n`
+				);
+			}
+		},
+		cancel() {
+			connections.delete(connectionId);
+			// Notify all remaining clients about the closed connection
+			sendSSEMessage(
+				JSON.stringify({
+					message: 'connection_status',
+					activeConnections: connections.size,
+					status: 'client_disconnected'
+				})
+			);
+			if (connections.size === 0) {
+				stopIntervals();
+			}
+		}
+	});
+
+	return new Response(stream, {
+		headers: {
+			'Content-Type': 'text/event-stream',
+			'Cache-Control': 'no-cache',
+			Connection: 'keep-alive'
+		}
+	});
+};
 
 export const POST: RequestHandler = async ({ request }) => {
 	const { connectionId } = await request.json();
