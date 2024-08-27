@@ -7,8 +7,15 @@
 	let activeConnections = writable<number>(0);
 	let connectionId = writable<string | null>(null);
 	let uiData = $state<UIData[]>([]);
+	let reconnectAttempts = $state(0);
+	let isConnected = $state(false);
+	let isVisible = $state(true);
+	let userTabbedAway = $state(false);
 
-	let eventSource: EventSource;
+	let eventSource: EventSource | null = null;
+	let reconnectMaxDelay = 15000;
+
+	let reconnectTimeout: number | null = null;
 
 	function handleMessage(event: MessageEvent) {
 		//console.log('Received SSE message:', event.data);
@@ -60,10 +67,38 @@
 		console.log('Updated messages:', $messages);
 	}
 
-	onMount(() => {
+	$effect(() => {
+		console.log('is connected', isConnected, 'isVisible', isVisible);
+		if (!isVisible) {
+			console.log('closing event source, user tabbed away');
+			eventSource?.close();
+			eventSource = null;
+		} else if (userTabbedAway) {
+			console.log('user tabbed back, reconnecting');
+			scheduleReconnect();
+			userTabbedAway = false;
+		}
+	});
+	const scheduleReconnect = () => {
+		if (reconnectTimeout) {
+			clearTimeout(reconnectTimeout);
+		}
+
+		const delay = Math.min(reconnectMaxDelay, Math.pow(2, reconnectAttempts) * 1000);
+		console.log(`Scheduling reconnect in ${delay}ms`);
+
+		reconnectTimeout = setTimeout(() => {
+			console.log('Attempting to reconnect...');
+			reconnectAttempts++;
+			connectToStream();
+		}, delay) as unknown as number;
+	};
+	const connectToStream = () => {
 		eventSource = new EventSource('/api/sse');
 		eventSource.onopen = () => {
 			console.log('SSE connection opened');
+			reconnectAttempts = 0;
+			isConnected = true;
 		};
 		eventSource.onerror = (err) => {
 			console.error('SSE connection error:', err);
@@ -81,11 +116,20 @@
 			}
 		}, 20000);
 
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+
 		return () => {
 			clearInterval(pingInterval);
 			if (eventSource) {
 				eventSource.close();
 			}
+		};
+	};
+	onMount(() => {
+		connectToStream();
+
+		return () => {
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
 		};
 	});
 
@@ -94,6 +138,13 @@
 			eventSource.close();
 		}
 	});
+	const handleVisibilityChange = () => {
+		isVisible = !document.hidden;
+		console.log('is visible', !document.hidden);
+		if (!isVisible) {
+			userTabbedAway = true;
+		}
+	};
 	function makeTime(seconds: number) {
 		return (seconds / 60).toFixed(1) + ' mins';
 	}

@@ -1,8 +1,7 @@
 import { type RequestHandler } from '@sveltejs/kit';
 import { getWaterData } from '$lib/server/getWaterData'; // Adjust the import path as necessary
-
+let connectionCounter = 0
 let connections: Map<string, Connection> = new Map();
-let connectionCounter = 0;
 let messageInterval: NodeJS.Timeout | null = null;
 let cleanupInterval: NodeJS.Timeout | null = null;
 let lookbackDate: Date = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -28,6 +27,7 @@ function sendSSEMessage(message: string | object) {
 	});
 
 	if (connections.size === 0) {
+        console.log("STOPPING... no clients")
 		stopIntervals();
 	}
 }
@@ -52,14 +52,8 @@ async function fetchAndProcessWaterData() {
 		const waterData: WaterData = await getWaterData(lookbackDate);
 		console.log('New Water Data:', {
 			message: waterData.message,
-			distDocs: waterData.distDocs.map((doc) => ({
-				...doc,
-				when: new Date(doc.when).toLocaleString()
-			})),
-			powerDocs: waterData.powerDocs.map((doc) => ({
-				...doc,
-				when: new Date(doc.when).toLocaleString()
-			}))
+			distDocs: waterData.distDocs.length,
+			powerDocs: waterData.powerDocs.length
 		});
 
 		if (waterData.message === 'ok') {
@@ -78,7 +72,7 @@ async function fetchAndProcessWaterData() {
 				);
 				console.log('Sent new data to clients');
 			} else {
-				console.log('No new data to send (newLookbackDate <= lookbackDate)');
+				console.log('No new data to send (newLookbackDate <= lookbackDate)', 'connections', connections.size);
 			}
 		} else {
 			console.error('Error in water data:', waterData.Error);
@@ -104,6 +98,7 @@ async function startIntervals() {
 			connections.forEach((connection, id) => {
 				if (now - connection.lastPing > 30000) {
 					connections.delete(id);
+					console.log('Removing connection:', id)
 				}
 			});
 		}, 60000);
@@ -122,6 +117,7 @@ function stopIntervals() {
 }
 
 export const GET: RequestHandler = () => {
+	console.log("======= STARTING GET =========")
 	const connectionId = (connectionCounter++).toString();
 
 	const stream = new ReadableStream({
