@@ -32,7 +32,6 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@sveltestrap/sveltestrap": "^6.2.7",
 		"mongodb": "^6.8.0"
 	}
 }

@@ -2,6 +2,8 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { writable } from 'svelte/store';
 	import convertToPower from '$lib/convertToPower';
+	import getWellRuntimeData from '$lib/getWellRuntimeData';
+	import WellReport from '$lib/components/WellReport.svelte';
 
 	let messages = writable<string[]>([]);
 	let activeConnections = writable<number>(0);
@@ -187,6 +189,41 @@
 
 		return theDate.toLocaleString('en-US', options);
 	}
+	function currentDistance() {
+		if (!uiData.length) return 0;
+		// @ts-ignore
+		return uiData.find((v) => v.distance).distance;
+	}
+	function isWellRunning() {
+		const resp = uiData.find((v) => 'state' in v && v.state === 'Well running') as
+			| PowerDoc
+			| undefined;
+		if (resp) {
+			const formattedTime = resp.when.toLocaleTimeString('en-US', {
+				hour: 'numeric',
+				minute: '2-digit',
+				second: '2-digit',
+				hour12: true
+			});
+			return `<h4 style="background-color: rgba(255, 99, 71, 0.5)">Well pump is on... started ${formattedTime}</h4>`;
+		}
+		return '';
+	}
+	function isPressureRunning() {
+		const resp = uiData.find((v) => 'state' in v && v.state === 'Pressure running') as
+			| PowerDoc
+			| undefined;
+		if (resp) {
+			const formattedTime = resp.when.toLocaleTimeString('en-US', {
+				hour: 'numeric',
+				minute: '2-digit',
+				second: '2-digit',
+				hour12: true
+			});
+			return `<h4 style="background-color: rgba(173, 175, 204)">Well pump is on... started ${formattedTime}</h4>`;
+		}
+		return '';
+	}
 </script>
 
 <h1>SSE Messages</h1>
@@ -201,14 +238,20 @@
 	</h1>
 	{#if uiData.length > 0}
 		<div>
-			<div class="container">
+			<h3 class="center">
+				Current well distance <strong>{currentDistance()}</strong>{' '}
+			</h3>
+			{@html isWellRunning()}
+			{@html isPressureRunning()}
+			<div class="box">
 				<div class="column">
+					<h3 class="center">Well Height</h3>
 					<table>
 						<thead>
 							<tr>
 								<th>What</th>
 								<th>When</th>
-								<th>Dist/ Time</th>
+								<th>Dist <br /> Time</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -222,9 +265,26 @@
 						</tbody>
 					</table>
 				</div>
+				<div class="column">
+					<WellReport groups={getWellRuntimeData(uiData)} />
+				</div>
 			</div>
 		</div>
 	{:else}
 		<div>NO Data</div>
 	{/if}
 </div>
+
+<style>
+	.box {
+		display: flex;
+		align-items: stretch;
+		gap: 20px;
+	}
+	td {
+		text-align: center;
+	}
+	.center {
+		text-align: center;
+	}
+</style>
