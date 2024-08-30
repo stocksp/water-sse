@@ -4,11 +4,12 @@
 	import convertToPower from '$lib/convertToPower';
 	import getWellRuntimeData from '$lib/getWellRuntimeData';
 	import WellReport from '$lib/components/WellReport.svelte';
+	import { createStore } from '$lib/uiData.svelte';
 
-	let messages = writable<string[]>([]);
+	const store = createStore();
+
 	let activeConnections = writable<number>(0);
 	let connectionId = writable<string | null>(null);
-	let uiData = $state<UIData[]>([]);
 	let reconnectAttempts = $state(0);
 	let isConnected = $state(false);
 	let isVisible = $state(true);
@@ -32,23 +33,11 @@
 		}
 
 		if (typeof data === 'object') {
-			if (data.message === 'initial_data') {
-				//console.log('Successfully parsed and convert JSON data:', convertToPower(data.data));
-				uiData = convertToPower(data.data);
-				const waterData: WaterData = data.data;
-				console.log('Received initial water data:', waterData);
-				messages.set([
-					`distDocs: ${waterData.distDocs.length}, powerDocs: ${waterData.powerDocs.length}`
-				]);
-			} else if (data.message === 'new_data') {
+			if (data.message === 'initial_data' || data.message === 'new_data') {
 				const waterData: WaterData = data.data;
 				console.log('Received new water data:', waterData);
-				/* messages.update((msgs) => [
-					...msgs,
-					`distDocs: ${waterData.distDocs.length}, powerDocs: ${waterData.powerDocs.length}`
-				]); */
-				const newData = convertToPower(data.data);
-				uiData.unshift(...newData);
+				const newData: UIData[] = convertToPower(data.data);
+				store.get().unshift(...newData);
 			} else if (data.message === 'connection_status') {
 				activeConnections.set(data.activeConnections);
 				console.log('Updated active connections:', data.activeConnections);
@@ -65,8 +54,6 @@
 			console.log('Received string data:', data);
 			// Handle any remaining string messages if necessary
 		}
-
-		console.log('Updated messages:', $messages);
 	}
 
 	$effect(() => {
@@ -190,12 +177,12 @@
 		return theDate.toLocaleString('en-US', options);
 	}
 	function currentDistance() {
-		if (!uiData.length) return 0;
+		if (!store.get().length) return 0;
 		// @ts-ignore
-		return uiData.find((v) => v.distance).distance;
+		return store.get().find((v) => v.distance).distance;
 	}
 	function isWellRunning() {
-		const resp = uiData.find((v) => 'state' in v && v.state === 'Well running') as
+		const resp = store.get().find((v) => 'state' in v && v.state === 'Well running') as
 			| PowerDoc
 			| undefined;
 		if (resp) {
@@ -210,7 +197,7 @@
 		return '';
 	}
 	function isPressureRunning() {
-		const resp = uiData.find((v) => 'state' in v && v.state === 'Pressure running') as
+		const resp = store.get().find((v) => 'state' in v && v.state === 'Pressure running') as
 			| PowerDoc
 			| undefined;
 		if (resp) {
@@ -236,7 +223,7 @@
 		<span class="mediumIcon">💦</span>
 		<span class="tinyIcon">💦</span>
 	</h1>
-	{#if uiData.length > 0}
+	{#if store.get().length > 0}
 		<div>
 			<h3 class="center">
 				Current well distance <strong>{currentDistance()}</strong>{' '}
@@ -255,7 +242,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each uiData as r, i (i)}
+							{#each store.get() as r, i (i)}
 								<tr style={getBGColor(r)}>
 									<td>{getWhat(r)}</td>
 									<td>{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</td>
@@ -266,7 +253,7 @@
 					</table>
 				</div>
 				<div class="column">
-					<WellReport groups={getWellRuntimeData(uiData)} />
+					<WellReport groups={getWellRuntimeData(store.get())} />
 				</div>
 			</div>
 		</div>

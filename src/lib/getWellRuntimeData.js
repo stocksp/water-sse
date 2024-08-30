@@ -46,7 +46,7 @@ const getWellRuntimeData = (d) => {
                     // we changed the well pump resting time on 7,18,2021
                     // from less than 30 minutes to 190 plus
                     const pumpSpan = 210
-                    console.log("span", pumpSpan)
+                    //console.log("span", pumpSpan)
                     const previous = group[group.length - 1]
                     const diff = differenceInMinutes(v.when, previous.when)
                     if (diff < pumpSpan + parseFloat(previous.dist)) {
@@ -66,7 +66,7 @@ const getWellRuntimeData = (d) => {
         // add last one
         groups.push(group)
         groups.reverse()
-        console.log("groups before", groups)
+        //console.log("groups before", groups)
         //const distData = data.filter((d) => d.dist);
         groups = groups.map((v, i, arr) => {
             let time = v
@@ -75,7 +75,7 @@ const getWellRuntimeData = (d) => {
                     return a + parseFloat(b.dist)
                 }, 0)
             time = Math.round(time * 10) / 10
-            console.log("time", time)
+            //console.log("time", time)
             // frags = "49.0,9.8,7.4,1.2"
             const frags = v
                 .filter((o) => o.what === "Well ran")
@@ -84,13 +84,13 @@ const getWellRuntimeData = (d) => {
                 }, "")
                 .slice(0, -1)
             const distStr = `${getDistVal(v[0].when, d)}-${getDistVal(v[v.length - 1].when, d)}`
-            console.log(
+            /* console.log(
                 "frags",
                 frags,
                 "start time",
                 getDistVal(v[0].when, d),
                 getDistVal(v[v.length - 1].when, d)
-            )
+            ) */
             const sinceLastPump =
                 i < arr.length - 1
                     ? differenceInHours(v[0].when, arr[i + 1][arr[i + 1].length - 1].when)

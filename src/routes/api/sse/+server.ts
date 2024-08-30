@@ -1,9 +1,11 @@
 import { type RequestHandler } from '@sveltejs/kit';
 import { getWaterData } from '$lib/server/getWaterData'; // Adjust the import path as necessary
-let connectionCounter = 0
+let connectionCounter = 0;
 let connections: Map<string, Connection> = new Map();
 let messageInterval: NodeJS.Timeout | null = null;
 let cleanupInterval: NodeJS.Timeout | null = null;
+let dataCleanupInterval: NodeJS.Timeout | null = null;
+
 let lookbackDate: Date = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 let savedWaterData: WaterData = { message: 'ok', distDocs: [], powerDocs: [] };
 
@@ -27,9 +29,17 @@ function sendSSEMessage(message: string | object) {
 	});
 
 	if (connections.size === 0) {
-        console.log("STOPPING... no clients")
+		console.log('STOPPING... no clients');
 		stopIntervals();
 	}
+}
+
+function filterOldData() {
+	const twoWeeksAgo = new Date();
+	twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+	savedWaterData.distDocs = savedWaterData.distDocs.filter((doc) => doc.when >= twoWeeksAgo);
+	savedWaterData.powerDocs = savedWaterData.powerDocs.filter((doc) => doc.when >= twoWeeksAgo);
 }
 
 function getLookbackDate(data: WaterData): Date {
@@ -72,7 +82,11 @@ async function fetchAndProcessWaterData() {
 				);
 				console.log('Sent new data to clients');
 			} else {
-				console.log('No new data to send (newLookbackDate <= lookbackDate)', 'connections', connections.size);
+				console.log(
+					'No new data to send (newLookbackDate <= lookbackDate)',
+					'connections',
+					connections.size
+				);
 			}
 		} else {
 			console.error('Error in water data:', waterData.Error);
@@ -98,10 +112,18 @@ async function startIntervals() {
 			connections.forEach((connection, id) => {
 				if (now - connection.lastPing > 30000) {
 					connections.delete(id);
-					console.log('Removing connection:', id)
+					console.log('Removing connection:', id);
 				}
 			});
 		}, 60000);
+	}
+	if (!dataCleanupInterval) {
+		// Initial cleanup
+		filterOldData();
+
+		dataCleanupInterval = setInterval(() => {
+			filterOldData();
+		}, 120000); // Run every 2 minutes (120000 ms)
 	}
 }
 
@@ -114,10 +136,14 @@ function stopIntervals() {
 		clearInterval(cleanupInterval);
 		cleanupInterval = null;
 	}
+	if (dataCleanupInterval) {
+		clearInterval(dataCleanupInterval);
+		dataCleanupInterval = null;
+	}
 }
 
 export const GET: RequestHandler = () => {
-	console.log("======= STARTING GET =========")
+	console.log('======= STARTING GET =========');
 	const connectionId = (connectionCounter++).toString();
 
 	const stream = new ReadableStream({
