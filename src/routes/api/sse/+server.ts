@@ -97,13 +97,16 @@ async function fetchAndProcessWaterData() {
 }
 
 async function startIntervals() {
+	console.log('starting intervals');
 	if (!messageInterval) {
 		// Initial fetch
 		await fetchAndProcessWaterData();
 
 		messageInterval = setInterval(async () => {
+			console.log('running messageInterval callback');
 			await fetchAndProcessWaterData();
 		}, 10000);
+		console.log('!!!setting messageInterval');
 	}
 
 	if (!cleanupInterval) {
@@ -128,15 +131,19 @@ async function startIntervals() {
 }
 
 function stopIntervals() {
+	console.log('Stopping intervals');
 	if (messageInterval) {
+		console.log('clearing message interval');
 		clearInterval(messageInterval);
 		messageInterval = null;
 	}
 	if (cleanupInterval) {
+		console.log('clearing cleanup interval');
 		clearInterval(cleanupInterval);
 		cleanupInterval = null;
 	}
 	if (dataCleanupInterval) {
+		console.log('clearing dataCleanup interval');
 		clearInterval(dataCleanupInterval);
 		dataCleanupInterval = null;
 	}
@@ -167,9 +174,8 @@ export const GET: RequestHandler = () => {
 			// Notify all clients about the new connection
 			sendSSEMessage(
 				JSON.stringify({
-					message: 'connection_status',
-					activeConnections: connections.size,
-					status: 'client_connected'
+					message: 'connection_update',
+					activeConnections: connections.size
 				})
 			);
 
@@ -188,9 +194,8 @@ export const GET: RequestHandler = () => {
 			// Notify all remaining clients about the closed connection
 			sendSSEMessage(
 				JSON.stringify({
-					message: 'connection_status',
-					activeConnections: connections.size,
-					status: 'client_disconnected'
+					message: 'connection_update',
+					activeConnections: connections.size
 				})
 			);
 			if (connections.size === 0) {
