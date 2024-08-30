@@ -10,10 +10,9 @@
 
 	let activeConnections = writable<number>(0);
 	let connectionId = writable<string | null>(null);
-	let reconnectAttempts = $state(0);
+	let reconnectAttempts = 0;
 	let isConnected = $state(false);
 	let isVisible = $state(true);
-	let userTabbedAway = $state(false);
 
 	let eventSource: EventSource | null = null;
 	let reconnectMaxDelay = 15000;
@@ -33,7 +32,12 @@
 		}
 
 		if (typeof data === 'object') {
-			if (data.message === 'initial_data' || data.message === 'new_data') {
+			if (data.message === 'initial_data') {
+				const waterData: WaterData = data.data;
+				console.log('Received new water data:', waterData);
+				const newData: UIData[] = convertToPower(data.data);
+				store.set(newData);
+			} else if (data.message === 'new_data') {
 				const waterData: WaterData = data.data;
 				console.log('Received new water data:', waterData);
 				const newData: UIData[] = convertToPower(data.data);
@@ -43,12 +47,11 @@
 				console.log('Updated active connections:', data.activeConnections);
 				if (data.status === 'connected') {
 					connectionId.set(data.id);
-					console.log('Set connection ID:', data.id);
-				} else if (data.status === 'client_connected') {
-					console.log('New client connected. Total connections:', data.activeConnections);
-				} else if (data.status === 'client_disconnected') {
-					console.log('A client disconnected. Total connections:', data.activeConnections);
+					console.log('Connected. Connection ID:', data.id);
 				}
+			} else if (data.message === 'connection_update') {
+				activeConnections.set(data.activeConnections);
+				console.log('Connection count updated. Total connections:', data.activeConnections);
 			}
 		} else if (typeof data === 'string') {
 			console.log('Received string data:', data);
@@ -62,10 +65,10 @@
 			console.log('closing event source, user tabbed away');
 			eventSource?.close();
 			eventSource = null;
-		} else if (userTabbedAway) {
-			console.log('user tabbed back, reconnecting');
+			isConnected = false;
+		} else if (!isConnected) {
+			console.log('user tabbed back or not connected, reconnecting');
 			scheduleReconnect();
-			userTabbedAway = false;
 		}
 	});
 	const scheduleReconnect = () => {
@@ -82,16 +85,32 @@
 			connectToStream();
 		}, delay) as unknown as number;
 	};
-	const connectToStream = () => {
+	let reconnectTimer: string | number | NodeJS.Timeout | null | undefined = null;
+	function connectToStream() {
+		if (eventSource) {
+			eventSource.close();
+		}
+
 		eventSource = new EventSource('/api/sse');
+
 		eventSource.onopen = () => {
 			console.log('SSE connection opened');
 			reconnectAttempts = 0;
 			isConnected = true;
+			if (reconnectTimer) {
+				clearTimeout(reconnectTimer);
+				reconnectTimer = null;
+			}
 		};
+
 		eventSource.onerror = (err) => {
 			console.error('SSE connection error:', err);
+			isConnected = false;
+			if (!reconnectTimer) {
+				scheduleReconnect();
+			}
 		};
+
 		eventSource.onmessage = handleMessage;
 
 		// Ping the server every 20 seconds to keep the connection alive
@@ -105,20 +124,26 @@
 			}
 		}, 20000);
 
+		// Add event listener for visibility change
 		document.addEventListener('visibilitychange', handleVisibilityChange);
 
+		// Return a cleanup function
 		return () => {
 			clearInterval(pingInterval);
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
 			if (eventSource) {
 				eventSource.close();
 			}
 		};
-	};
+	}
 	onMount(() => {
-		connectToStream();
+		const cleanup = connectToStream();
 
 		return () => {
-			document.removeEventListener('visibilitychange', handleVisibilityChange);
+			cleanup();
+			if (reconnectTimer) {
+				clearTimeout(reconnectTimer);
+			}
 		};
 	});
 
@@ -126,12 +151,15 @@
 		if (eventSource) {
 			eventSource.close();
 		}
+		if (reconnectTimer) {
+			clearTimeout(reconnectTimer);
+		}
 	});
 	const handleVisibilityChange = () => {
 		isVisible = !document.hidden;
-		console.log('is visible', !document.hidden);
-		if (!isVisible) {
-			userTabbedAway = true;
+		console.log('is visible', isVisible);
+		if (isVisible && !isConnected) {
+			scheduleReconnect();
 		}
 	};
 	function makeTime(seconds: number) {
@@ -207,7 +235,7 @@
 				second: '2-digit',
 				hour12: true
 			});
-			return `<h4 style="background-color: rgba(173, 175, 204)">Well pump is on... started ${formattedTime}</h4>`;
+			return `<h4 style="background-color: rgba(173, 175, 204)">Pressure pump is on... started ${formattedTime}</h4>`;
 		}
 		return '';
 	}
