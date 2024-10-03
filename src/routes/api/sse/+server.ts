@@ -14,6 +14,7 @@ function sendSSEMessage(message: string | object) {
 	connections.forEach((connection, id) => {
 		if (now - connection.lastPing > 30000) {
 			connections.delete(id);
+			console.log('deleting connection', id)
 		} else {
 			try {
 				const messageString = typeof message === 'string' ? message : JSON.stringify(message);
@@ -150,9 +151,9 @@ function stopIntervals() {
 }
 
 export const GET: RequestHandler = () => {
-	console.log('======= STARTING GET =========');
 	const connectionId = (connectionCounter++).toString();
-
+	console.log('======= STARTING GET =========', connectionId);
+	
 	const stream = new ReadableStream({
 		start(controller) {
 			connections.set(connectionId, { controller, lastPing: Date.now() });
@@ -172,6 +173,7 @@ export const GET: RequestHandler = () => {
 			);
 
 			// Notify all clients about the new connection
+			console.log('sendSSEMessage connection_update')
 			sendSSEMessage(
 				JSON.stringify({
 					message: 'connection_update',

@@ -8,8 +8,7 @@
 
 	const store = createStore();
 
-	let activeConnections = writable<number>(0);
-	let connectionId = writable<string | null>(null);
+	let connectionId : string | null = null;
 	let reconnectAttempts = 0;
 	let isConnected = $state(false);
 	let isVisible = $state(true);
@@ -36,21 +35,21 @@
 				const waterData: WaterData = data.data;
 				console.log('Received new water data:', waterData);
 				const newData: UIData[] = convertToPower(data.data);
-				store.set(newData);
+				store.setUiData(newData);
 			} else if (data.message === 'new_data') {
 				const waterData: WaterData = data.data;
 				console.log('Received new water data:', waterData);
 				const newData: UIData[] = convertToPower(data.data);
-				store.get().unshift(...newData);
+				store.getUiData().unshift(...newData);
 			} else if (data.message === 'connection_status') {
-				activeConnections.set(data.activeConnections);
+				store.setActiveConnections(data.activeConnections);
 				console.log('Updated active connections:', data.activeConnections);
 				if (data.status === 'connected') {
-					connectionId.set(data.id);
+					connectionId = data.id;
 					console.log('Connected. Connection ID:', data.id);
 				}
 			} else if (data.message === 'connection_update') {
-				activeConnections.set(data.activeConnections);
+				store.setActiveConnections(data.activeConnections);
 				console.log('Connection count updated. Total connections:', data.activeConnections);
 			}
 		} else if (typeof data === 'string') {
@@ -115,11 +114,11 @@
 
 		// Ping the server every 20 seconds to keep the connection alive
 		const pingInterval = setInterval(() => {
-			if ($connectionId) {
+			if (connectionId) {
 				fetch('/api/sse', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ connectionId: $connectionId })
+					body: JSON.stringify({ connectionId: connectionId })
 				});
 			}
 		}, 20000);
@@ -205,12 +204,12 @@
 		return theDate.toLocaleString('en-US', options);
 	}
 	function currentDistance() {
-		if (!store.get().length) return 0;
+		if (!store.getUiData().length) return 0;
 		// @ts-ignore
-		return store.get().find((v) => v.distance).distance;
+		return store.getUiData().find((v) => v.distance).distance;
 	}
 	function isWellRunning() {
-		const resp = store.get().find((v) => 'state' in v && v.state === 'Well running') as
+		const resp = store.getUiData().find((v) => 'state' in v && v.state === 'Well running') as
 			| PowerDoc
 			| undefined;
 		if (resp) {
@@ -225,7 +224,7 @@
 		return '';
 	}
 	function isPressureRunning() {
-		const resp = store.get().find((v) => 'state' in v && v.state === 'Pressure running') as
+		const resp = store.getUiData().find((v) => 'state' in v && v.state === 'Pressure running') as
 			| PowerDoc
 			| undefined;
 		if (resp) {
@@ -242,7 +241,7 @@
 </script>
 
 <h1>SSE Messages</h1>
-<h3>Active Connections: {$activeConnections}</h3>
+<h3>Active Connections: {store.getActiveConnections()}</h3>
 <div>
 	<h1 class="text-center">
 		<span class="tinyIcon">💦</span>
@@ -251,7 +250,7 @@
 		<span class="mediumIcon">💦</span>
 		<span class="tinyIcon">💦</span>
 	</h1>
-	{#if store.get().length > 0}
+	{#if store.getUiData().length > 0}
 		<div>
 			<h3 class="center">
 				Current well distance <strong>{currentDistance()}</strong>{' '}
@@ -270,7 +269,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each store.get() as r, i (i)}
+							{#each store.getUiData() as r, i (i)}
 								<tr style={getBGColor(r)}>
 									<td>{getWhat(r)}</td>
 									<td>{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</td>
@@ -281,7 +280,7 @@
 					</table>
 				</div>
 				<div class="column">
-					<WellReport groups={getWellRuntimeData(store.get())} />
+					<WellReport groups={getWellRuntimeData(store.getUiData())} />
 				</div>
 			</div>
 		</div>
