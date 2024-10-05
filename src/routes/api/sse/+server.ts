@@ -11,6 +11,7 @@ let savedWaterData: WaterData = { message: 'ok', distDocs: [], powerDocs: [] };
 
 function sendSSEMessage(message: string | object) {
 	const now = Date.now();
+	console.log('connections:', connections.size)
 	connections.forEach((connection, id) => {
 		if (now - connection.lastPing > 30000) {
 			connections.delete(id);
@@ -22,6 +23,7 @@ function sendSSEMessage(message: string | object) {
 			} catch (error) {
 				if (error instanceof TypeError && error.message.includes('Controller is already closed')) {
 					connections.delete(id);
+					console.log('deleting connection', id)
 				} else {
 					console.error(`Error sending message to connection ${id}:`, error);
 				}
@@ -157,6 +159,7 @@ export const GET: RequestHandler = () => {
 	const stream = new ReadableStream({
 		start(controller) {
 			connections.set(connectionId, { controller, lastPing: Date.now() });
+			console.log('start controller .... connections', connections.size)
 
 			if (connections.size === 1) {
 				startIntervals();
@@ -216,6 +219,7 @@ export const GET: RequestHandler = () => {
 };
 
 export const POST: RequestHandler = async ({ request }) => {
+	console.log('POST handler')
 	const { connectionId } = await request.json();
 	const connection = connections.get(connectionId);
 	if (connection) {

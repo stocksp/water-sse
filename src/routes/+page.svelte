@@ -1,169 +1,20 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import { writable } from 'svelte/store';
-	import convertToPower from '$lib/convertToPower';
+	
 	import getWellRuntimeData from '$lib/getWellRuntimeData';
 	import WellReport from '$lib/components/WellReport.svelte';
-	import { createStore } from '$lib/uiData.svelte';
+	import { store } from '$lib/uiData';
+	import * as Table from '$lib/components/ui/table/index.js';
 
-	const store = createStore();
 
-	let connectionId : string | null = null;
-	let reconnectAttempts = 0;
-	let isConnected = $state(false);
-	let isVisible = $state(true);
-
-	let eventSource: EventSource | null = null;
-	let reconnectMaxDelay = 15000;
-
-	let reconnectTimeout: number | null = null;
-
-	function handleMessage(event: MessageEvent) {
-		//console.log('Received SSE message:', event.data);
-
-		let data: any;
-		try {
-			data = JSON.parse(event.data);
-		} catch (error) {
-			console.log('Failed to parse as JSON. Raw data:', event.data);
-			console.log('Parse error:', error);
-			data = event.data;
-		}
-
-		if (typeof data === 'object') {
-			if (data.message === 'initial_data') {
-				const waterData: WaterData = data.data;
-				console.log('Received new water data:', waterData);
-				const newData: UIData[] = convertToPower(data.data);
-				store.setUiData(newData);
-			} else if (data.message === 'new_data') {
-				const waterData: WaterData = data.data;
-				console.log('Received new water data:', waterData);
-				const newData: UIData[] = convertToPower(data.data);
-				store.getUiData().unshift(...newData);
-			} else if (data.message === 'connection_status') {
-				store.setActiveConnections(data.activeConnections);
-				console.log('Updated active connections:', data.activeConnections);
-				if (data.status === 'connected') {
-					connectionId = data.id;
-					console.log('Connected. Connection ID:', data.id);
-				}
-			} else if (data.message === 'connection_update') {
-				store.setActiveConnections(data.activeConnections);
-				console.log('Connection count updated. Total connections:', data.activeConnections);
-			}
-		} else if (typeof data === 'string') {
-			console.log('Received string data:', data);
-			// Handle any remaining string messages if necessary
-		}
-	}
-
-	$effect(() => {
-		console.log('is connected', isConnected, 'isVisible', isVisible);
-		if (!isVisible) {
-			console.log('closing event source, user tabbed away');
-			eventSource?.close();
-			eventSource = null;
-			isConnected = false;
-		} else if (!isConnected) {
-			console.log('user tabbed back or not connected, reconnecting');
-			scheduleReconnect();
-		}
-	});
-	const scheduleReconnect = () => {
-		if (reconnectTimeout) {
-			clearTimeout(reconnectTimeout);
-		}
-
-		const delay = Math.min(reconnectMaxDelay, Math.pow(2, reconnectAttempts) * 1000);
-		console.log(`Scheduling reconnect in ${delay}ms`);
-
-		reconnectTimeout = setTimeout(() => {
-			console.log('Attempting to reconnect...');
-			reconnectAttempts++;
-			connectToStream();
-		}, delay) as unknown as number;
-	};
-	let reconnectTimer: string | number | NodeJS.Timeout | null | undefined = null;
-	function connectToStream() {
-		if (eventSource) {
-			eventSource.close();
-		}
-
-		eventSource = new EventSource('/api/sse');
-
-		eventSource.onopen = () => {
-			console.log('SSE connection opened');
-			reconnectAttempts = 0;
-			isConnected = true;
-			if (reconnectTimer) {
-				clearTimeout(reconnectTimer);
-				reconnectTimer = null;
-			}
-		};
-
-		eventSource.onerror = (err) => {
-			console.error('SSE connection error:', err);
-			isConnected = false;
-			if (!reconnectTimer) {
-				scheduleReconnect();
-			}
-		};
-
-		eventSource.onmessage = handleMessage;
-
-		// Ping the server every 20 seconds to keep the connection alive
-		const pingInterval = setInterval(() => {
-			if (connectionId) {
-				fetch('/api/sse', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ connectionId: connectionId })
-				});
-			}
-		}, 20000);
-
-		// Add event listener for visibility change
-		document.addEventListener('visibilitychange', handleVisibilityChange);
-
-		// Return a cleanup function
-		return () => {
-			clearInterval(pingInterval);
-			document.removeEventListener('visibilitychange', handleVisibilityChange);
-			if (eventSource) {
-				eventSource.close();
-			}
-		};
-	}
-	onMount(() => {
-		const cleanup = connectToStream();
-
-		return () => {
-			cleanup();
-			if (reconnectTimer) {
-				clearTimeout(reconnectTimer);
-			}
-		};
-	});
-
-	onDestroy(() => {
-		if (eventSource) {
-			eventSource.close();
-		}
-		if (reconnectTimer) {
-			clearTimeout(reconnectTimer);
-		}
-	});
-	const handleVisibilityChange = () => {
-		isVisible = !document.hidden;
-		console.log('is visible', isVisible);
-		if (isVisible && !isConnected) {
-			scheduleReconnect();
-		}
-	};
+	let uiData = $derived($store.uiData);
+	//let theData = $state(store.getUiData());
 	function makeTime(seconds: number) {
 		return (seconds / 60).toFixed(1) + ' mins';
 	}
+	/* $effect(() => {
+		console.log(theData)
+	}) */
+	//$inspect(uiData)
 
 	const getBGColor = (data: any) => {
 		switch (data.pump) {
@@ -234,7 +85,7 @@
 				second: '2-digit',
 				hour12: true
 			});
-			return `<h4 style="background-color: rgba(173, 175, 204)">Pressure pump is on... started ${formattedTime}</h4>`;
+			return `<h4 class="text-center" style="background-color: rgba(173, 175, 204)">Pressure pump is on... started ${formattedTime}</h4>`;
 		}
 		return '';
 	}
@@ -243,23 +94,41 @@
 <h1>SSE Messages</h1>
 <h3>Active Connections: {store.getActiveConnections()}</h3>
 <div>
-	<h1 class="text-center">
+	<h1 class="text-center lg:text-3xl">
 		<span class="tinyIcon">💦</span>
 		<span class="mediumIcon">💦</span>
 		💦Water Report💦
 		<span class="mediumIcon">💦</span>
 		<span class="tinyIcon">💦</span>
 	</h1>
-	{#if store.getUiData().length > 0}
+	{#if uiData.length > 0}
 		<div>
-			<h3 class="center">
+			<h3 class="text-center text-xl">
 				Current well distance <strong>{currentDistance()}</strong>{' '}
 			</h3>
 			{@html isWellRunning()}
 			{@html isPressureRunning()}
-			<div class="box">
-				<div class="column">
-					<h3 class="center">Well Height</h3>
+			<Table.Root>
+				<Table.Caption>Well Height</Table.Caption>
+				<Table.Header>
+					<Table.Row>
+						<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">What</Table.Head>
+						<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">When</Table.Head>
+						<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">Dist / Time</Table.Head>
+					</Table.Row>
+				</Table.Header>
+				<Table.Body>
+					{#each store.getUiData() as r, i (i)}
+						<Table.Row  style={getBGColor(r)}>
+							<Table.Cell class="px-4 py-2">{getWhat(r)}</Table.Cell>
+							<Table.Cell class="px-4 py-2">{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</Table.Cell>
+							<Table.Cell class="px-4 py-2">{doTd(r)}</Table.Cell>
+						</Table.Row>
+					{/each}
+				</Table.Body>
+			</Table.Root>
+
+			<!-- <h3 class="center">Well Height</h3>
 					<table>
 						<thead>
 							<tr>
@@ -277,12 +146,11 @@
 								</tr>
 							{/each}
 						</tbody>
-					</table>
-				</div>
-				<div class="column">
+					</table> -->
+
+			<!-- <div class="column">
 					<WellReport groups={getWellRuntimeData(store.getUiData())} />
-				</div>
-			</div>
+				</div> -->
 		</div>
 	{:else}
 		<div>NO Data</div>
@@ -290,15 +158,5 @@
 </div>
 
 <style>
-	.box {
-		display: flex;
-		align-items: stretch;
-		gap: 20px;
-	}
-	td {
-		text-align: center;
-	}
-	.center {
-		text-align: center;
-	}
+	
 </style>
