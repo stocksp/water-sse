@@ -4,15 +4,11 @@
 
 	import convertToPower from '$lib/convertToPower';
 	
-	import { store } from '$lib/uiData';
+	import { store } from '$lib/uiData.svelte';
 	
-	
-
-	
-
 	let connectionId: string | null = null;
 	let reconnectAttempts = 0;
-	let isConnected = $state(false);
+	
 	let isVisible = $state(true);
 
 	let eventSource: EventSource | null = null;
@@ -62,13 +58,13 @@
 	}
 
 	$effect(() => {
-		console.log('is connected', isConnected, 'isVisible', isVisible);
+		console.log('is connected', store.getIsConnected, 'isVisible', isVisible);
 		if (!isVisible) {
 			console.log('closing event source, user tabbed away');
 			eventSource?.close();
 			eventSource = null;
-			isConnected = false;
-		} else if (!isConnected) {
+			store.setIsConnected(false);
+		} else if (!store.getIsConnected) {
 			console.log('user tabbed back or not connected, reconnecting');
 			scheduleReconnect();
 		}
@@ -98,7 +94,7 @@
 		eventSource.onopen = () => {
 			console.log('SSE connection opened');
 			reconnectAttempts = 0;
-			isConnected = true;
+			store.setIsConnected(true);
 			if (reconnectTimer) {
 				clearTimeout(reconnectTimer);
 				reconnectTimer = null;
@@ -107,7 +103,7 @@
 
 		eventSource.onerror = (err) => {
 			console.error('SSE connection error:', err);
-			isConnected = false;
+			store.setIsConnected(false);
 			if (!reconnectTimer) {
 				scheduleReconnect();
 			}
@@ -131,6 +127,7 @@
 
 		// Return a cleanup function
 		return () => {
+			console.log('cleaning up')
 			clearInterval(pingInterval);
 			document.removeEventListener('visibilitychange', handleVisibilityChange);
 			if (eventSource) {
@@ -160,7 +157,7 @@
 	const handleVisibilityChange = () => {
 		isVisible = !document.hidden;
 		console.log('is visible', isVisible);
-		if (isVisible && !isConnected) {
+		if (isVisible && !store.getIsConnected) {
 			scheduleReconnect();
 		}
 	};

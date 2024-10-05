@@ -2,11 +2,11 @@
 	
 	import getWellRuntimeData from '$lib/getWellRuntimeData';
 	import WellReport from '$lib/components/WellReport.svelte';
-	import { store } from '$lib/uiData';
+	import { store } from '$lib/uiData.svelte';
 	import * as Table from '$lib/components/ui/table/index.js';
 
 
-	let uiData = $derived($store.uiData);
+	//let uiData = $state(store.getUiData());
 	//let theData = $state(store.getUiData());
 	function makeTime(seconds: number) {
 		return (seconds / 60).toFixed(1) + ' mins';
@@ -14,7 +14,7 @@
 	/* $effect(() => {
 		console.log(theData)
 	}) */
-	//$inspect(uiData)
+	//$inspect(uiData).with(() => { console.log('uiData',uiData.length) });
 
 	const getBGColor = (data: any) => {
 		switch (data.pump) {
@@ -55,12 +55,12 @@
 		return theDate.toLocaleString('en-US', options);
 	}
 	function currentDistance() {
-		if (!store.getUiData().length) return 0;
+		if (!store.getUiData.length) return 0;
 		// @ts-ignore
-		return store.getUiData().find((v) => v.distance).distance;
+		return store.getUiData.find((v) => v.distance).distance;
 	}
 	function isWellRunning() {
-		const resp = store.getUiData().find((v) => 'state' in v && v.state === 'Well running') as
+		const resp = store.getUiData.find((v) => 'state' in v && v.state === 'Well running') as
 			| PowerDoc
 			| undefined;
 		if (resp) {
@@ -75,7 +75,7 @@
 		return '';
 	}
 	function isPressureRunning() {
-		const resp = store.getUiData().find((v) => 'state' in v && v.state === 'Pressure running') as
+		const resp = store.getUiData.find((v) => 'state' in v && v.state === 'Pressure running') as
 			| PowerDoc
 			| undefined;
 		if (resp) {
@@ -92,7 +92,7 @@
 </script>
 
 <h1>SSE Messages</h1>
-<h3>Active Connections: {store.getActiveConnections()}</h3>
+<h3>Active Connections: {store.getActiveConnections}</h3>
 <div>
 	<h1 class="text-center lg:text-3xl">
 		<span class="tinyIcon">💦</span>
@@ -101,7 +101,7 @@
 		<span class="mediumIcon">💦</span>
 		<span class="tinyIcon">💦</span>
 	</h1>
-	{#if uiData.length > 0}
+	{#if store.getUiData.length > 0}
 		<div>
 			<h3 class="text-center text-xl">
 				Current well distance <strong>{currentDistance()}</strong>{' '}
@@ -118,7 +118,7 @@
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
-					{#each store.getUiData() as r, i (i)}
+					{#each store.getUiData as r, i (i)}
 						<Table.Row  style={getBGColor(r)}>
 							<Table.Cell class="px-4 py-2">{getWhat(r)}</Table.Cell>
 							<Table.Cell class="px-4 py-2">{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</Table.Cell>
@@ -153,7 +153,7 @@
 				</div> -->
 		</div>
 	{:else}
-		<div>NO Data</div>
+		<div>NO Data, {store.getUiData.length}</div>
 	{/if}
 </div>
 
