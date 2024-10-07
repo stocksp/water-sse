@@ -13,10 +13,11 @@
 
 	let isVisible = $state(true);
 
-	let eventSource: EventSource | null = null;
+	let eventSource: EventSource | null = $state(null);
 	let reconnectMaxDelay = 15000;
 
-	let reconnectTimeout: number | null = null;
+	let reconnectTimeout: NodeJS.Timeout | null = null;
+	let pingInterval: number | NodeJS.Timeout | null = null;
 
 	function handleMessage(event: MessageEvent) {
 		//console.log('Received SSE message:', event.data);
@@ -83,12 +84,12 @@
 			console.log('Attempting to reconnect...');
 			reconnectAttempts++;
 			connectToStream();
-		}, delay) as unknown as number;
+		}, delay);
 	};
 	let reconnectTimer: string | number | NodeJS.Timeout | null | undefined = null;
 	function connectToStream() {
-		if (eventSource) {
-			eventSource.close();
+		if (eventSource && eventSource.readyState !== EventSource.CLOSED) {
+			return;
 		}
 
 		eventSource = new EventSource('/api/sse');
@@ -112,9 +113,12 @@
 		};
 
 		eventSource.onmessage = handleMessage;
-
+		
+		if (pingInterval) {
+				clearInterval(pingInterval);
+			}
 		// Ping the server every 20 seconds to keep the connection alive
-		const pingInterval = setInterval(() => {
+		pingInterval = setInterval(() => {
 			if (connectionId) {
 				console.log('ping server:', connectionId)
 				fetch('/api/sse', {
@@ -131,7 +135,7 @@
 		// Return a cleanup function
 		return () => {
 			console.log('cleaning up');
-			clearInterval(pingInterval);
+			clearInterval(pingInterval as number);
 			document.removeEventListener('visibilitychange', handleVisibilityChange);
 			if (eventSource) {
 				eventSource.close();
@@ -139,22 +143,18 @@
 		};
 	}
 	onMount(() => {
-		const cleanup = connectToStream();
-
-		return () => {
-			cleanup();
-			if (reconnectTimer) {
-				clearTimeout(reconnectTimer);
-			}
-		};
+		connectToStream();
 	});
 
 	onDestroy(() => {
 		if (eventSource) {
 			eventSource.close();
 		}
-		if (reconnectTimer) {
-			clearTimeout(reconnectTimer);
+		if (reconnectTimeout) {
+			clearTimeout(reconnectTimeout);
+		}
+		if (pingInterval) {
+			clearInterval(pingInterval);
 		}
 	});
 	const handleVisibilityChange = () => {

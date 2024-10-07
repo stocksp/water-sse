@@ -102,15 +102,9 @@ async function fetchAndProcessWaterData() {
 async function startIntervals() {
 	console.log('starting intervals');
 	if (!messageInterval) {
-		// Initial fetch
-		await fetchAndProcessWaterData();
-
-		messageInterval = setInterval(async () => {
-			console.log('running messageInterval callback');
-			await fetchAndProcessWaterData();
-		}, 10000);
-		console.log('!!!setting messageInterval');
-	}
+        messageInterval = setInterval(fetchAndProcessWaterData, 10000); // simplified
+        console.log('!!!setting messageInterval');
+    }
 
 	if (!cleanupInterval) {
 		cleanupInterval = setInterval(() => {
@@ -135,21 +129,12 @@ async function startIntervals() {
 
 function stopIntervals() {
 	console.log('Stopping intervals');
-	if (messageInterval) {
-		console.log('clearing message interval');
-		clearInterval(messageInterval);
-		messageInterval = null;
-	}
-	if (cleanupInterval) {
-		console.log('clearing cleanup interval');
-		clearInterval(cleanupInterval);
-		cleanupInterval = null;
-	}
-	if (dataCleanupInterval) {
-		console.log('clearing dataCleanup interval');
-		clearInterval(dataCleanupInterval);
-		dataCleanupInterval = null;
-	}
+    if (messageInterval) clearInterval(messageInterval);
+    if (cleanupInterval) clearInterval(cleanupInterval);
+    if (dataCleanupInterval) clearInterval(dataCleanupInterval);
+    messageInterval = null;
+    cleanupInterval = null;
+    dataCleanupInterval = null; //Explicitly set to null after clearing
 }
 
 export const GET: RequestHandler = () => {
