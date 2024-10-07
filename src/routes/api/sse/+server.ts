@@ -219,9 +219,10 @@ export const GET: RequestHandler = () => {
 };
 
 export const POST: RequestHandler = async ({ request }) => {
-	console.log('POST handler')
+	
 	const { connectionId } = await request.json();
 	const connection = connections.get(connectionId);
+	console.log('POST handler connectionId:', connectionId)
 	if (connection) {
 		connection.lastPing = Date.now();
 	}

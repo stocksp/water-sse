@@ -3,12 +3,14 @@
 	import { onMount, onDestroy } from 'svelte';
 
 	import convertToPower from '$lib/convertToPower';
-	
+
 	import { store } from '$lib/uiData.svelte';
-	
+
+	let { children } = $props();
+
 	let connectionId: string | null = null;
 	let reconnectAttempts = 0;
-	
+
 	let isVisible = $state(true);
 
 	let eventSource: EventSource | null = null;
@@ -33,7 +35,7 @@
 				const waterData: WaterData = data.data;
 				console.log('Received initial data:', waterData);
 				const newData: UIData[] = convertToPower(data.data);
-				console.log("initial data", newData)
+				//console.log('initial data', newData);
 				store.setUiData(newData);
 			} else if (data.message === 'new_data') {
 				const waterData: WaterData = data.data;
@@ -114,6 +116,7 @@
 		// Ping the server every 20 seconds to keep the connection alive
 		const pingInterval = setInterval(() => {
 			if (connectionId) {
+				console.log('ping server:', connectionId)
 				fetch('/api/sse', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -127,7 +130,7 @@
 
 		// Return a cleanup function
 		return () => {
-			console.log('cleaning up')
+			console.log('cleaning up');
 			clearInterval(pingInterval);
 			document.removeEventListener('visibilitychange', handleVisibilityChange);
 			if (eventSource) {
@@ -165,7 +168,7 @@
 
 <div class="app">
 	<main>
-		<slot></slot>
+		{@render children()}
 	</main>
 </div>
 

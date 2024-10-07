@@ -94,7 +94,7 @@
 <h1>SSE Messages</h1>
 <h3>Active Connections: {store.getActiveConnections}</h3>
 <div>
-	<h1 class="text-center lg:text-3xl">
+	<h1 class="text-center text-xl">
 		<span class="tinyIcon">💦</span>
 		<span class="mediumIcon">💦</span>
 		💦Water Report💦
