@@ -1,10 +1,8 @@
 <script lang="ts">
-	
 	import getWellRuntimeData from '$lib/getWellRuntimeData';
 	import WellReport from '$lib/components/WellReport.svelte';
 	import { store } from '$lib/uiData.svelte';
 	import * as Table from '$lib/components/ui/table/index.js';
-
 
 	//let uiData = $state(store.getUiData());
 	//let theData = $state(store.getUiData());
@@ -14,7 +12,9 @@
 	/* $effect(() => {
 		console.log(theData)
 	}) */
-	//$inspect(uiData).with(() => { console.log('uiData',uiData.length) });
+	$inspect(store.getUiData).with(() => {
+		console.log('uiData', store.getUiData.length);
+	});
 
 	const getBGColor = (data: any) => {
 		switch (data.pump) {
@@ -109,19 +109,26 @@
 			{@html isWellRunning()}
 			{@html isPressureRunning()}
 			<Table.Root>
-				<Table.Caption>Well Height</Table.Caption>
 				<Table.Header>
 					<Table.Row>
 						<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">What</Table.Head>
 						<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">When</Table.Head>
-						<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">Dist / Time</Table.Head>
+						<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold"
+							>Dist / Time</Table.Head
+						>
 					</Table.Row>
 				</Table.Header>
+
 				<Table.Body>
 					{#each store.getUiData as r, i (i)}
-						<Table.Row  style={getBGColor(r)}>
+						<Table.Row
+							class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900' : ''}
+							style={getBGColor(r)}
+						>
 							<Table.Cell class="px-4 py-2">{getWhat(r)}</Table.Cell>
-							<Table.Cell class="px-4 py-2">{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</Table.Cell>
+							<Table.Cell class="px-4 py-2"
+								>{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</Table.Cell
+							>
 							<Table.Cell class="px-4 py-2">{doTd(r)}</Table.Cell>
 						</Table.Row>
 					{/each}
@@ -158,5 +165,4 @@
 </div>
 
 <style>
-	
 </style>

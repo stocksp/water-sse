@@ -102,6 +102,7 @@ async function fetchAndProcessWaterData() {
 async function startIntervals() {
 	console.log('starting intervals');
 	if (!messageInterval) {
+		await fetchAndProcessWaterData()
         messageInterval = setInterval(fetchAndProcessWaterData, 10000); // simplified
         console.log('!!!setting messageInterval');
     }

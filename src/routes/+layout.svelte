@@ -13,11 +13,11 @@
 
 	let isVisible = $state(true);
 
-	let eventSource: EventSource | null = $state(null);
+	let eventSource: EventSource | null = null;
 	let reconnectMaxDelay = 15000;
 
 	let reconnectTimeout: NodeJS.Timeout | null = null;
-	let pingInterval: number | NodeJS.Timeout | null = null;
+	let pingInterval: number | null = null;
 
 	function handleMessage(event: MessageEvent) {
 		//console.log('Received SSE message:', event.data);
@@ -59,20 +59,35 @@
 			// Handle any remaining string messages if necessary
 		}
 	}
+	function stopConnection() {
+		console.log('stopConnection called'); //ADDED DEBUG
+		if (pingInterval) {
+			clearInterval(pingInterval);
+			pingInterval = null;
+		}
+		if (eventSource) {
+			eventSource.close();
+			eventSource = null;
+		}
+		if (reconnectTimeout) {
+			clearTimeout(reconnectTimeout);
+			reconnectTimeout = null;
+		}
+	}
 
 	$effect(() => {
-		console.log('is connected', store.getIsConnected, 'isVisible', isVisible);
-		if (!isVisible) {
+		console.log('EFFECT RUNNING: is connected', store.getIsConnected, 'isVisible', isVisible); //ADDED DEBUG
+		if (!isVisible && store.getIsConnected) {
 			console.log('closing event source, user tabbed away');
-			eventSource?.close();
-			eventSource = null;
+			stopConnection(); // Call a helper function for cleanup
 			store.setIsConnected(false);
-		} else if (!store.getIsConnected) {
+		} else if (!store.getIsConnected && isVisible) {
 			console.log('user tabbed back or not connected, reconnecting');
 			scheduleReconnect();
 		}
 	});
 	const scheduleReconnect = () => {
+		console.log('scheduleReconnect called'); //ADDED DEBUG
 		if (reconnectTimeout) {
 			clearTimeout(reconnectTimeout);
 		}
@@ -88,81 +103,58 @@
 	};
 	let reconnectTimer: string | number | NodeJS.Timeout | null | undefined = null;
 	function connectToStream() {
-		if (eventSource && eventSource.readyState !== EventSource.CLOSED) {
-			return;
-		}
-
+		console.log('connectToStream called'); //ADDED DEBUG
+		stopConnection();
+		console.log('Creating new EventSource...'); // ADDED DEBUG
 		eventSource = new EventSource('/api/sse');
 
 		eventSource.onopen = () => {
 			console.log('SSE connection opened');
 			reconnectAttempts = 0;
 			store.setIsConnected(true);
-			if (reconnectTimer) {
-				clearTimeout(reconnectTimer);
-				reconnectTimer = null;
+			if (reconnectTimeout) {
+				clearTimeout(reconnectTimeout);
+				reconnectTimeout = null;
 			}
+			
+			pingInterval = setInterval(() => {
+				if (connectionId) {
+					console.log('ping server:', connectionId);
+					fetch('/api/sse', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ connectionId: connectionId })
+					});
+				}
+			}, 20000);
 		};
 
 		eventSource.onerror = (err) => {
 			console.error('SSE connection error:', err);
 			store.setIsConnected(false);
-			if (!reconnectTimer) {
-				scheduleReconnect();
+			if (pingInterval) {
+				clearInterval(pingInterval);
 			}
+			scheduleReconnect();
 		};
 
 		eventSource.onmessage = handleMessage;
+
 		
-		if (pingInterval) {
-				clearInterval(pingInterval);
-			}
-		// Ping the server every 20 seconds to keep the connection alive
-		pingInterval = setInterval(() => {
-			if (connectionId) {
-				console.log('ping server:', connectionId)
-				fetch('/api/sse', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ connectionId: connectionId })
-				});
-			}
-		}, 20000);
-
-		// Add event listener for visibility change
-		document.addEventListener('visibilitychange', handleVisibilityChange);
-
-		// Return a cleanup function
-		return () => {
-			console.log('cleaning up');
-			clearInterval(pingInterval as number);
-			document.removeEventListener('visibilitychange', handleVisibilityChange);
-			if (eventSource) {
-				eventSource.close();
-			}
-		};
 	}
 	onMount(() => {
 		connectToStream();
+		// Add event listener for visibility change
+		document.addEventListener('visibilitychange', handleVisibilityChange);
 	});
 
 	onDestroy(() => {
-		if (eventSource) {
-			eventSource.close();
-		}
-		if (reconnectTimeout) {
-			clearTimeout(reconnectTimeout);
-		}
-		if (pingInterval) {
-			clearInterval(pingInterval);
-		}
+		stopConnection(); //Call stopConnection on destroy
+		document.removeEventListener('visibilitychange', handleVisibilityChange);
 	});
 	const handleVisibilityChange = () => {
 		isVisible = !document.hidden;
 		console.log('is visible', isVisible);
-		if (isVisible && !store.getIsConnected) {
-			scheduleReconnect();
-		}
 	};
 </script>
 
