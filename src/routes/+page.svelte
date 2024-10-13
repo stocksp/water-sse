@@ -1,17 +1,11 @@
 <script lang="ts">
-	import getWellRuntimeData from '$lib/getWellRuntimeData';
-	import WellReport from '$lib/components/WellReport.svelte';
 	import { store } from '$lib/uiData.svelte';
 	import * as Table from '$lib/components/ui/table/index.js';
 
-	//let uiData = $state(store.getUiData());
-	//let theData = $state(store.getUiData());
 	function makeTime(seconds: number) {
 		return (seconds / 60).toFixed(1) + ' mins';
 	}
-	/* $effect(() => {
-		console.log(theData)
-	}) */
+
 	$inspect(store.getUiData).with(() => {
 		console.log('uiData', store.getUiData.length);
 	});
@@ -91,78 +85,32 @@
 	}
 </script>
 
-<h1>SSE Messages</h1>
-<h3>Active Connections: {store.getActiveConnections}</h3>
-<div>
-	<h1 class="text-center text-xl">
-		<span class="tinyIcon">💦</span>
-		<span class="mediumIcon">💦</span>
-		💦Water Report💦
-		<span class="mediumIcon">💦</span>
-		<span class="tinyIcon">💦</span>
-	</h1>
-	{#if store.getUiData.length > 0}
-		<div>
-			<h3 class="text-center text-xl">
-				Current well distance <strong>{currentDistance()}</strong>{' '}
-			</h3>
-			{@html isWellRunning()}
-			{@html isPressureRunning()}
-			<Table.Root>
-				<Table.Header>
-					<Table.Row>
-						<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">What</Table.Head>
-						<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">When</Table.Head>
-						<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold"
-							>Dist / Time</Table.Head
-						>
-					</Table.Row>
-				</Table.Header>
+{#if store.getUiData.length > 0}
+	<Table.Root>
+		<Table.Header>
+			<Table.Row>
+				<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">What</Table.Head>
+				<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">When</Table.Head>
+				<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">Dist / Time</Table.Head
+				>
+			</Table.Row>
+		</Table.Header>
 
-				<Table.Body>
-					{#each store.getUiData as r, i (i)}
-						<Table.Row
-							class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900' : ''}
-							style={getBGColor(r)}
-						>
-							<Table.Cell class="px-4 py-2">{getWhat(r)}</Table.Cell>
-							<Table.Cell class="px-4 py-2"
-								>{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</Table.Cell
-							>
-							<Table.Cell class="px-4 py-2">{doTd(r)}</Table.Cell>
-						</Table.Row>
-					{/each}
-				</Table.Body>
-			</Table.Root>
-
-			<!-- <h3 class="center">Well Height</h3>
-					<table>
-						<thead>
-							<tr>
-								<th>What</th>
-								<th>When</th>
-								<th>Dist <br /> Time</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each store.getUiData() as r, i (i)}
-								<tr style={getBGColor(r)}>
-									<td>{getWhat(r)}</td>
-									<td>{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</td>
-									<td>{doTd(r)}</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table> -->
-
-			<!-- <div class="column">
-					<WellReport groups={getWellRuntimeData(store.getUiData())} />
-				</div> -->
-		</div>
-	{:else}
-		<div>NO Data, {store.getUiData.length}</div>
-	{/if}
-</div>
+		<Table.Body>
+			{#each store.getUiData as r, i (i)}
+				<Table.Row class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900' : ''} style={getBGColor(r)}>
+					<Table.Cell class="px-4 py-2">{getWhat(r)}</Table.Cell>
+					<Table.Cell class="px-4 py-2"
+						>{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</Table.Cell
+					>
+					<Table.Cell class="px-4 py-2">{doTd(r)}</Table.Cell>
+				</Table.Row>
+			{/each}
+		</Table.Body>
+	</Table.Root>
+{:else}
+	<div>NO Data, {store.getUiData.length}</div>
+{/if}
 
 <style>
 </style>

@@ -31,6 +31,13 @@ declare global {
 		pump: string;
 		runTime?: number;
 	}
+	interface GroupItem {
+		time: number;
+		frags: string;
+		sinceLastPump: number;
+		when: Date;
+		dists: string;
+	  }
 
 	interface WaterData {
 		message: string;

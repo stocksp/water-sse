@@ -17,7 +17,7 @@
 	let reconnectMaxDelay = 15000;
 
 	let reconnectTimeout: NodeJS.Timeout | null = null;
-	let pingInterval: number | null = null;
+	let pingInterval: NodeJS.Timeout | null = null;
 
 	function handleMessage(event: MessageEvent) {
 		//console.log('Received SSE message:', event.data);
@@ -36,7 +36,7 @@
 				const waterData: WaterData = data.data;
 				console.log('Received initial data:', waterData);
 				const newData: UIData[] = convertToPower(data.data);
-				//console.log('initial data', newData);
+				console.log('initial data', newData);
 				store.setUiData(newData);
 			} else if (data.message === 'new_data') {
 				const waterData: WaterData = data.data;
@@ -116,7 +116,7 @@
 				clearTimeout(reconnectTimeout);
 				reconnectTimeout = null;
 			}
-			
+
 			pingInterval = setInterval(() => {
 				if (connectionId) {
 					console.log('ping server:', connectionId);
@@ -139,8 +139,6 @@
 		};
 
 		eventSource.onmessage = handleMessage;
-
-		
 	}
 	onMount(() => {
 		connectToStream();
@@ -156,10 +154,61 @@
 		isVisible = !document.hidden;
 		console.log('is visible', isVisible);
 	};
+	function currentDistance() {
+		if (!store.getUiData.length) return 0;
+		// @ts-ignore
+		return store.getUiData.find((v) => v.distance).distance;
+	}
+	function isWellRunning() {
+		const resp = store.getUiData.find((v) => 'state' in v && v.state === 'Well running') as
+			| PowerDoc
+			| undefined;
+		if (resp) {
+			const formattedTime = resp.when.toLocaleTimeString('en-US', {
+				hour: 'numeric',
+				minute: '2-digit',
+				second: '2-digit',
+				hour12: true
+			});
+			return `<h4 style="background-color: rgba(255, 99, 71, 0.5)">Well pump is on... started ${formattedTime}</h4>`;
+		}
+		return '';
+	}
+	function isPressureRunning() {
+		const resp = store.getUiData.find((v) => 'state' in v && v.state === 'Pressure running') as
+			| PowerDoc
+			| undefined;
+		if (resp) {
+			const formattedTime = resp.when.toLocaleTimeString('en-US', {
+				hour: 'numeric',
+				minute: '2-digit',
+				second: '2-digit',
+				hour12: true
+			});
+			return `<h4 class="text-center" style="background-color: rgba(173, 175, 204)">Pressure pump is on... started ${formattedTime}</h4>`;
+		}
+		return '';
+	}
 </script>
 
 <div class="app">
 	<main>
+		<h3>Active Connections: {store.getActiveConnections}</h3>
+		<h1 class="text-center lg:text-4xl">
+			<span class="tinyIcon">💦</span>
+			<span class="mediumIcon">💦</span>
+			💦Water Report💦
+			<span class="mediumIcon">💦</span>
+			<span class="tinyIcon">💦</span>
+		</h1>
+		{#if store.getUiData.length > 0}
+			<h3 class="text-center lg:text-2xl">
+				Current well distance <strong>{currentDistance()}</strong>{' '}
+			</h3>
+			{@html isWellRunning()}
+			{@html isPressureRunning()}
+		{/if}
+
 		{@render children()}
 	</main>
 </div>
