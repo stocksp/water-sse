@@ -34,13 +34,13 @@
 		if (typeof data === 'object') {
 			if (data.message === 'initial_data') {
 				const waterData: WaterData = data.data;
-				console.log('Received initial data:', waterData);
+				//console.log('Received initial data:', waterData);
 				const newData: UIData[] = convertToPower(data.data);
-				console.log('initial data', newData);
+				//console.log('initial data', newData);
 				store.setUiData(newData);
 			} else if (data.message === 'new_data') {
 				const waterData: WaterData = data.data;
-				console.log('Received new water data:', waterData);
+				//console.log('Received new water data:', waterData);
 				const newData: UIData[] = convertToPower(data.data);
 				store.setUiData((currentData) => [...newData, ...currentData]);
 			} else if (data.message === 'connection_status') {

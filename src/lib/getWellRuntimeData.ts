@@ -32,7 +32,7 @@ const getDistVal = (date: Date, arr: UIData[]): number => {
 const getWellRuntimeData = (d: UIData[]): GroupItem[] => {
 	if (d.length === 0) return [];
 
-	console.log('Input data length:', d.length);
+	//console.log('Input data length:', d.length);
 
 	const theData: TheDataItem[] = d
 		.map((r) => {
@@ -87,7 +87,7 @@ const getWellRuntimeData = (d: UIData[]): GroupItem[] => {
 	// Reverse the groups to get them in chronological order
 	groups.reverse();
 
-	console.log('Number of groups:', groups.length);
+	//console.log('Number of groups:', groups.length);
 
 	const finalGroups: GroupItem[] = groups.map((v, i, arr): GroupItem => {
 		let time = v

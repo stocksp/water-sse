@@ -6,9 +6,9 @@
 		return (seconds / 60).toFixed(1) + ' mins';
 	}
 
-	$inspect(store.getUiData).with(() => {
-		console.log('uiData', store.getUiData.length);
-	});
+	// $inspect(store.getUiData).with(() => {
+	// 	console.log('uiData', store.getUiData.length);
+	// });
 
 	const getBGColor = (data: any) => {
 		switch (data.pump) {
