@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import { browser } from '$app/environment';
 	import { onMount, onDestroy } from 'svelte';
 
 	import convertToPower from '$lib/convertToPower';
@@ -141,18 +142,24 @@
 		eventSource.onmessage = handleMessage;
 	}
 	onMount(() => {
-		connectToStream();
-		// Add event listener for visibility change
-		document.addEventListener('visibilitychange', handleVisibilityChange);
+		if (browser) {
+			connectToStream();
+			// Add event listener for visibility change
+			document.addEventListener('visibilitychange', handleVisibilityChange);
+		}
 	});
 
 	onDestroy(() => {
-		stopConnection(); //Call stopConnection on destroy
-		document.removeEventListener('visibilitychange', handleVisibilityChange);
+		if (browser) {
+			stopConnection(); //Call stopConnection on destroy
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
+		}
 	});
 	const handleVisibilityChange = () => {
-		isVisible = !document.hidden;
-		console.log('is visible', isVisible);
+		if (browser) {
+			isVisible = !document.hidden;
+			console.log('is visible', isVisible);
+		}
 	};
 	function currentDistance() {
 		if (!store.getUiData.length) return 0;
