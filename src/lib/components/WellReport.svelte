@@ -34,13 +34,13 @@
 	<Table.Header>
 		<Table.Row>
 			<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">Time</Table.Head>
-			<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">Fragments</Table.Head>
+			<Table.Head class="w-[250px] px-4 py-3 text-black md:font-extrabold">Fragments</Table.Head>
 			<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">Start-End</Table.Head>
 			<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold"
 				>Hours<br /> since</Table.Head
 			>
-			<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">Fragments</Table.Head>
-			<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">When ended</Table.Head>
+			
+			<Table.Head class="w-[200px] px-4 py-3 text-black md:font-extrabold">When ended</Table.Head>
 		</Table.Row>
 	</Table.Header>
 
