@@ -1,5 +1,15 @@
 <script lang="ts">
-	import * as Table from '$lib/components/ui/table/index.js';
+	import {
+		Table,
+		TableBody,
+		TableBodyCell,
+		TableBodyRow,
+		TableHead,
+		TableHeadCell,
+		Checkbox,
+		TableSearch
+	} from 'flowbite-svelte';
+
 	import { page } from '$app/stores';
 	import { store } from '$lib/uiData.svelte';
 
@@ -30,54 +40,28 @@
 </script>
 
 <h1 class="text-center lg:text-2xl">Pump Filling Stats</h1>
-<Table.Root>
-	<Table.Header>
-		<Table.Row>
-			<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">Time</Table.Head>
-			<Table.Head class="w-[250px] px-4 py-3 text-black md:font-extrabold">Fragments</Table.Head>
-			<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">Start-End</Table.Head>
-			<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold"
-				>Hours<br /> since</Table.Head
-			>
-			
-			<Table.Head class="w-[200px] px-4 py-3 text-black md:font-extrabold">When ended</Table.Head>
-		</Table.Row>
-	</Table.Header>
+<Table>
+	<TableHead>
 
-	<Table.Body>
+			<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold">Time</TableHeadCell>
+			<TableHeadCell class="w-[250px] px-4 py-3 text-black md:font-extrabold">Fragments</TableHeadCell>
+			<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold">Start-End</TableHeadCell>
+			<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold">Hours<br /> since</TableHeadCell>
+			<TableHeadCell class="w-[200px] px-4 py-3 text-black md:font-extrabold">When ended</TableHeadCell>
+	</TableHead>
+
+	<TableBody>
 		{#each groups as r, i (i)}
-			<Table.Row class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900' : ''} style={getBGColor(r)}>
-				<Table.Cell class="px-4 py-2">{r.time}</Table.Cell>
-				<Table.Cell class="px-4 py-2">{r.frags}</Table.Cell>
-				<Table.Cell class="px-4 py-2">{r.dists}</Table.Cell>
-				<Table.Cell class="px-4 py-2">{r.sinceLastPump}</Table.Cell>
-				<Table.Cell class="px-4 py-2">{doFormat(r.when)}</Table.Cell>
-			</Table.Row>
+			<TableBodyRow class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900' : ''} style={getBGColor(r)}>
+				<TableBodyCell class="px-4 py-2">{r.time}</TableBodyCell>
+				<TableBodyCell class="px-4 py-2">{r.frags}</TableBodyCell>
+				<TableBodyCell class="px-4 py-2">{r.dists}</TableBodyCell>
+				<TableBodyCell class="px-4 py-2">{r.sinceLastPump}</TableBodyCell>
+				<TableBodyCell class="px-4 py-2">{doFormat(r.when)}</TableBodyCell>
+			</TableBodyRow>
 		{/each}
-	</Table.Body>
-</Table.Root>
-<table>
-	<thead>
-		<tr>
-			<th>Time</th>
-			<th>Fragments</th>
-			<th>Start-End</th>
-			<th>Hours<br /> since</th>
-			<th>When ended</th>
-		</tr>
-	</thead>
-	<tbody>
-		{#each groups as r, i (i)}
-			<tr style={getBGColor(r)}>
-				<td>{r.time}</td>
-				<td>{r.frags}</td>
-				<td>{r.dists}</td>
-				<td>{r.sinceLastPump}</td>
-				<td>{doFormat(r.when)}</td>
-			</tr>
-		{/each}
-	</tbody>
-</table>
+	</TableBody>
+</Table>
 
 <style>
 	

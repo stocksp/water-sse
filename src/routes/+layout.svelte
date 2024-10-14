@@ -1,11 +1,13 @@
 <script lang="ts">
 	import '../app.css';
 	import { browser } from '$app/environment';
+	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 
 	import convertToPower from '$lib/convertToPower';
 
 	import { store } from '$lib/uiData.svelte';
+	import { Navbar, NavBrand, NavLi, NavUl, NavHamburger } from 'flowbite-svelte';
 
 	let { children } = $props();
 
@@ -13,6 +15,7 @@
 	let reconnectAttempts = 0;
 
 	let isVisible = $state(true);
+	let activeUrl = $derived($page.url.pathname)
 
 	let eventSource: EventSource | null = null;
 	let reconnectMaxDelay = 15000;
@@ -87,6 +90,9 @@
 			scheduleReconnect();
 		}
 	});
+	$effect(() => {
+
+	})
 	const scheduleReconnect = () => {
 		console.log('scheduleReconnect called'); //ADDED DEBUG
 		if (reconnectTimeout) {
@@ -200,7 +206,14 @@
 
 <div class="app">
 	<main>
-		<h3>Active Connections: {store.getActiveConnections}</h3>
+		
+		<Navbar >
+			<NavHamburger />
+			<NavUl {activeUrl}>
+				<NavLi href="/" class="text-xl">Home</NavLi>
+				<NavLi href="/well" class="text-xl">Well Report</NavLi>
+			</NavUl>
+		</Navbar>
 		<h1 class="text-center lg:text-4xl">
 			<span class="tinyIcon">💦</span>
 			<span class="mediumIcon">💦</span>
@@ -212,6 +225,7 @@
 			<h3 class="text-center lg:text-2xl">
 				Current well distance <strong>{currentDistance()}</strong>{' '}
 			</h3>
+			<h3 class="text-center lg:text-xl">Active Connections now: {store.getActiveConnections}</h3>
 			{@html isWellRunning()}
 			{@html isPressureRunning()}
 		{/if}

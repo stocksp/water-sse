@@ -1,6 +1,15 @@
 <script lang="ts">
 	import { store } from '$lib/uiData.svelte';
-	import * as Table from '$lib/components/ui/table/index.js';
+	import {
+		Table,
+		TableBody,
+		TableBodyCell,
+		TableBodyRow,
+		TableHead,
+		TableHeadCell,
+		Checkbox,
+		TableSearch
+	} from 'flowbite-svelte';
 
 	function makeTime(seconds: number) {
 		return (seconds / 60).toFixed(1) + ' mins';
@@ -86,28 +95,30 @@
 </script>
 
 {#if store.getUiData.length > 0}
-	<Table.Root>
-		<Table.Header>
-			<Table.Row>
-				<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">What</Table.Head>
-				<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">When</Table.Head>
-				<Table.Head class="w-[150px] px-4 py-3 text-black md:font-extrabold">Dist / Time</Table.Head
-				>
-			</Table.Row>
-		</Table.Header>
+	<Table>
+		<TableHead>
+			<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold">What</TableHeadCell>
+			<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold">When</TableHeadCell>
+			<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold"
+				>Dist / Time</TableHeadCell
+			>
+		</TableHead>
 
-		<Table.Body>
+		<TableBody>
 			{#each store.getUiData as r, i (i)}
-				<Table.Row class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900' : ''} style={getBGColor(r)}>
-					<Table.Cell class="px-4 py-2">{getWhat(r)}</Table.Cell>
-					<Table.Cell class="px-4 py-2"
-						>{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</Table.Cell
+				<TableBodyRow
+					class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900' : ''}
+					style={getBGColor(r)}
+				>
+					<TableBodyCell class="px-4 py-2">{getWhat(r)}</TableBodyCell>
+					<TableBodyCell class="px-4 py-2"
+						>{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</TableBodyCell
 					>
-					<Table.Cell class="px-4 py-2">{doTd(r)}</Table.Cell>
-				</Table.Row>
+					<TableBodyCell class="px-4 py-2">{doTd(r)}</TableBodyCell>
+				</TableBodyRow>
 			{/each}
-		</Table.Body>
-	</Table.Root>
+		</TableBody>
+	</Table>
 {:else}
 	<div>NO Data, {store.getUiData.length}</div>
 {/if}
