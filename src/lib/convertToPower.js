@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { browser } from '$app/environment'
 function parseJSON(dateString) {
   const date = new Date(dateString);
   return isNaN(date.getTime()) ? null : date;
@@ -7,14 +8,15 @@ function parseJSON(dateString) {
 function compareDesc(dateA, dateB) {
   return dateB.getTime() - dateA.getTime();
 }
-
+let power = []
 const converter = (d) => {
   console.log('running convert!!');
-
-  let power = d.powerDocs.map((doc) => {
-    doc.when = parseJSON(doc.when);
-    return doc;
-  });
+  if (browser) {
+    power = d.powerDocs.map((doc) => {
+      doc.when = parseJSON(doc.when);
+      return doc;
+    });
+  }
 
   let foundFirstPressure = false;
   let foundFirstWell = false;
@@ -44,11 +46,15 @@ const converter = (d) => {
     }
     return acc;
   }, []);
-
-  const dist = d.distDocs.map((doc) => {
-    doc.when = parseJSON(doc.when); // Assuming 'when' is already a Date object
-    return doc;
-  });
+  let dist = []
+  if (browser) {
+    dist = d.distDocs.map((doc) => {
+      doc.when = parseJSON(doc.when); // Assuming 'when' is already a Date object
+      return doc;
+    });
+  } else {
+    dist = d.distDocs
+  }
 
   return power.concat(dist).sort((a, b) => compareDesc(a.when, b.when));
 };

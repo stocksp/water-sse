@@ -6,14 +6,13 @@
 		TableBodyRow,
 		TableHead,
 		TableHeadCell,
-		Checkbox,
-		TableSearch
+		
 	} from 'flowbite-svelte';
 
 	import { page } from '$app/stores';
 	import { store } from '$lib/uiData.svelte';
 
-	let { groups }: { groups: GroupItem[] } = $props();
+	let { groups, title }: { groups: GroupItem[], title: string } = $props();
 	const getBGColor = (data: any) => {
 		switch (data.pump) {
 			case 'well':
@@ -36,10 +35,10 @@
 
 		return theDate.toLocaleString('en-US', options);
 	}
-	$inspect(groups)
+	//$inspect(groups)
 </script>
 
-<h1 class="text-center lg:text-2xl">Pump Filling Stats</h1>
+<h1 class="text-center lg:text-2xl">{title}</h1>
 <Table>
 	<TableHead>
 

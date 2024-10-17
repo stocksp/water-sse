@@ -34,18 +34,18 @@
 			console.log('Parse error:', error);
 			data = event.data;
 		}
-
+		
 		if (typeof data === 'object') {
 			if (data.message === 'initial_data') {
 				const waterData: WaterData = data.data;
-				//console.log('Received initial data:', waterData);
-				const newData: UIData[] = convertToPower(data.data);
+				//console.log('Received initial data:',typeof waterData.distDocs[0].when);
+				const newData: UIData = convertToPower(data.data);
 				//console.log('initial data', newData);
 				store.setUiData(newData);
 			} else if (data.message === 'new_data') {
 				const waterData: WaterData = data.data;
 				//console.log('Received new water data:', waterData);
-				const newData: UIData[] = convertToPower(data.data);
+				const newData: UIData = convertToPower(data.data);
 				store.setUiData((currentData) => [...newData, ...currentData]);
 			} else if (data.message === 'connection_status') {
 				store.setActiveConnections(data.activeConnections);

@@ -18,9 +18,9 @@ function differenceInMinutes(date1: Date, date2: Date): number {
 	return Math.floor(diffMs / (1000 * 60));
 }
 
-const getDistVal = (date: Date, arr: UIData[]): number => {
+const getDistVal = (date: Date, arr: UIData): number => {
 	const dists = arr
-		.filter((item) => 'distance' in item && typeof item.distance === 'number')
+		.filter((item) => 'distance' in item )
 		.sort(
 			(a, b) =>
 				Math.abs(date.getTime() - a.when.getTime()) - Math.abs(date.getTime() - b.when.getTime())
@@ -29,7 +29,7 @@ const getDistVal = (date: Date, arr: UIData[]): number => {
 	return dists.length > 0 ? dists[0].distance : 0;
 };
 
-const getWellRuntimeData = (d: UIData[]): GroupItem[] => {
+const getWellRuntimeData = (d: UIData): GroupItem[] => {
 	if (d.length === 0) return [];
 
 	//console.log('Input data length:', d.length);

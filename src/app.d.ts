@@ -56,6 +56,7 @@ declare global {
 		controller: ReadableStreamDefaultController;
 		lastPing: number;
 	}
+	type Db = import('mongodb').Db; 
 }
 
 export {};
