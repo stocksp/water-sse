@@ -212,6 +212,7 @@
 			<NavUl {activeUrl}>
 				<NavLi href="/" class="text-xl">Home</NavLi>
 				<NavLi href="/well" class="text-xl">Well Report</NavLi>
+				<NavLi href="/climate" class="text-xl">Climate Report</NavLi>
 			</NavUl>
 		</Navbar>
 		<h1 class="text-center lg:text-4xl">

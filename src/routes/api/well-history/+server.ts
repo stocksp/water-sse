@@ -33,6 +33,8 @@ export async function GET() {
 			console.log('groups 1', groups[0])
 			return json( { message: 'ok', fillSessions: groups });
 		} else {
+			//TODO activate this with a look back of 30 days if history older than that
+			// then update it!
 			//console.log('history', hist)
 			/* console.log('ninetyDaysAgo right before call', ninetyDaysAgo)
 			const newGroups = await getData(db, hist[0].when);
