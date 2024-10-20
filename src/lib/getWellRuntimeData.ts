@@ -4,6 +4,7 @@ interface TheDataItem {
 	dist: string | number;
 }
 
+
 function makeTime(seconds: number): string {
 	return (seconds / 60).toFixed(1) + ' mins';
 }
@@ -31,6 +32,7 @@ const getDistVal = (date: Date, arr: UIData): number => {
 
 const getWellRuntimeData = (d: UIData): GroupItem[] => {
 	if (d.length === 0) return [];
+	const theDists = d.filter((item) => 'distance' in item)
 
 	//console.log('Input data length:', d.length);
 
@@ -103,10 +105,10 @@ const getWellRuntimeData = (d: UIData): GroupItem[] => {
 		const startDist = getDistVal(v[0].when, d);
 		const endDist = getDistVal(v[v.length - 1].when, d);
 		const distStr = `${startDist.toFixed(1)}-${endDist.toFixed(1)}`;
-
+		// compare the start of this session with the end of the last
 		const sinceLastPump =
-			i > 0 ? differenceInHours(v[0].when, arr[i - 1][arr[i - 1].length - 1].when) : 0;
-
+			i < arr.length -1 ? differenceInHours(v[0].when, arr[i + 1][arr[i + 1].length -1].when) : 0;
+			
 		return {
 			time,
 			frags,
