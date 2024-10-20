@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
-	import { Radio } from 'flowbite-svelte';
+	import { Radio, Button } from 'flowbite-svelte';
 
 	let filter = $state('all');
 
@@ -43,12 +43,16 @@
 	};
 </script>
 
-<h1 class="text-center lg:text-2xl">Local Climate news!</h1>
+<h1 class="text-center lg:text-2xl">
+	Local Climate news! &nbsp &nbsp<span><Button onclick={async (e: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) => {
+		getClimate();
+		e.currentTarget.blur();
+	  }}  size="xs" color="blue" pill>Refresh</Button> </span>
+</h1>
 {#await getClimate()}
 	<p>Loading...</p>
 {:then data}
-	
-	<div class="flex space-x-4  mx-auto">
+	<div class="mx-auto flex space-x-4">
 		<span class="text-lg">Select what you want</span>
 		<Radio bind:group={filter} value="all" class="text-lg">All</Radio>
 		<Radio bind:group={filter} value="Crawl Space" class="text-lg">Crawl Space</Radio>
