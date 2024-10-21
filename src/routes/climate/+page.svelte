@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
 	import { Radio, Button } from 'flowbite-svelte';
 
@@ -11,6 +13,10 @@
 			return data.filter((r: any) => r.name === filter);
 		}
 	};
+	function reloadPage() {
+
+		goto($page.url.pathname, { invalidateAll: true });
+	}
 
 	async function getClimate() {
 		const response = await fetch('/api/climate');
@@ -44,10 +50,7 @@
 </script>
 
 <h1 class="text-center lg:text-2xl">
-	Local Climate news! &nbsp &nbsp<span><Button onclick={async (e: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) => {
-		getClimate();
-		e.currentTarget.blur();
-	  }}  size="xs" color="blue" pill>Refresh</Button> </span>
+	Local Climate news! &nbsp &nbsp<span><Button onclick={reloadPage} size="xs" color="blue" pill>Refresh</Button> </span>
 </h1>
 {#await getClimate()}
 	<p>Loading...</p>
