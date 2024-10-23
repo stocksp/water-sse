@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
 	import { Radio, Button } from 'flowbite-svelte';
+	import { onMount } from 'svelte';
 
 	let filter = $state('all');
 
@@ -15,14 +16,20 @@
 	};
 	function reloadPage() {
 
-		goto($page.url.pathname, { invalidateAll: true });
+		getClimate()
 	}
+	onMount(() => {
+		getClimate()
+	})
+
+	let climateData = $state([])
 
 	async function getClimate() {
+		climateData = []
 		const response = await fetch('/api/climate');
-		let climate = await response.json();
-		console.log('climate', climate);
-		return climate;
+		let data = await response.json();
+		console.log('climate', data.climateDocs.length);
+		climateData = data.climateDocs;
 	}
 	const getBGColor = (data: any) => {
 		switch (data.pump) {
@@ -52,9 +59,9 @@
 <h1 class="text-center lg:text-2xl">
 	Local Climate news! &nbsp &nbsp<span><Button onclick={reloadPage} size="xs" color="blue" pill>Refresh</Button> </span>
 </h1>
-{#await getClimate()}
+{#if climateData.length == 0}
 	<p>Loading...</p>
-{:then data}
+{:else }
 	<div class="mx-auto flex space-x-4">
 		<span class="text-lg">Select what you want</span>
 		<Radio bind:group={filter} value="all" class="text-lg">All</Radio>
@@ -71,7 +78,7 @@
 		</TableHead>
 
 		<TableBody>
-			{#each filterData(data.climateDocs) as r, i (i)}
+			{#each filterData(climateData) as r, i (i)}
 				<TableBodyRow class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900' : ''} style={getBGColor(r)}>
 					<TableBodyCell class="px-4 py-2">{r.name}</TableBodyCell>
 					<TableBodyCell class="px-4 py-2">{r.temperature}</TableBodyCell>
@@ -81,6 +88,5 @@
 			{/each}
 		</TableBody>
 	</Table>
-{:catch error}
-	<p>{error.message}</p>
-{/await}
+
+{/if}
