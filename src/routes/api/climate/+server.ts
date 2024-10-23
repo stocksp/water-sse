@@ -11,12 +11,7 @@ export async function GET() {
 			.collection('climate')
 			.find({
 				when: { $gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-				$or: [
-					{ name: 'Crawl Space' },
-					{ name: 'home' },
-					{ name: 'outside' },
-					{ name: 'Well Climate inside' }
-				]
+				$or: [{ name: 'Crawl Space' }, { name: 'home' }, { name: 'outside' }, { name: 'Well Climate inside' }, { name: 'Tank Climate inside' }]
 			})
 			.project({ _id: 0 })
 			.sort({ _id: -1 })
