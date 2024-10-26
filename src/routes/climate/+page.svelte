@@ -15,21 +15,33 @@
 		}
 	};
 	function reloadPage() {
-
-		getClimate()
+		getClimate();
 	}
 	onMount(() => {
-		getClimate()
-	})
+		getClimate();
+	});
 
-	let climateData = $state([])
+	let climateData = $state([]);
 
 	async function getClimate() {
-		climateData = []
-		const response = await fetch('/api/climate');
-		let data = await response.json();
-		console.log('climate', data.climateDocs.length);
-		climateData = data.climateDocs;
+		climateData = [];
+		try {
+			const response = await fetch('/api/climate');
+			if (!response.ok) {
+				// Check if the response was successful
+				const errorData = await response.json();
+				console.error('Error fetching climate data:', errorData.error);
+				// Handle the error (e.g., display an error message to the user)
+				return; // Or throw an error to stop further processing
+			}
+
+			const data = await response.json();
+			console.log('climate', data.climateDocs.length);
+			climateData = data.climateDocs;
+		} catch (error) {
+			console.error('Error fetching climate data:', error);
+			// Handle the error (e.g., display a generic error message)
+		}
 	}
 	const getBGColor = (data: any) => {
 		switch (data.pump) {
@@ -61,7 +73,7 @@
 </h1>
 {#if climateData.length == 0}
 	<p>Loading...</p>
-{:else }
+{:else}
 	<div class="mx-auto flex space-x-4">
 		<span class="text-lg">Select what you want</span>
 		<Radio bind:group={filter} value="all" class="text-lg">All</Radio>
@@ -88,5 +100,4 @@
 			{/each}
 		</TableBody>
 	</Table>
-
 {/if}
