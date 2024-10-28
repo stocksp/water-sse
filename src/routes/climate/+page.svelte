@@ -54,17 +54,17 @@
 		}
 	};
 	const doFormat = (theDate: Date) => {
-		const realDate = new Date(theDate);
 		const options = {
-			month: 'short' as 'short' | 'numeric' | '2-digit' | 'long' | 'narrow',
-			day: 'numeric' as 'numeric' | '2-digit',
-			hour: 'numeric' as 'numeric' | '2-digit',
-			minute: 'numeric' as 'numeric' | '2-digit',
-			second: 'numeric' as 'numeric' | '2-digit',
-			hour12: true
+			month: 'short' as const,
+			day: 'numeric' as const,
+			hour: 'numeric' as const,
+			minute: 'numeric' as const,
+			second: 'numeric' as const,
+			hour12: true,
+			timeZone: 'America/Los_Angeles' // Force Pacific time
 		};
 
-		return realDate.toLocaleString('en-US', options);
+		return new Date(theDate).toLocaleString('en-US', options);
 	};
 </script>
 

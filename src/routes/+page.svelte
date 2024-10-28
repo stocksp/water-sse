@@ -36,11 +36,7 @@
 			return '-----';
 		}
 	}
-	const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-	// or hardcode it if you prefer
-	// const userTimeZone = 'America/Los_Angeles';
-
-	function doFormat(theDate: Date) {
+	const doFormat = (theDate: Date) => {
 		const options = {
 			month: 'short' as const,
 			day: 'numeric' as const,
@@ -48,11 +44,11 @@
 			minute: 'numeric' as const,
 			second: 'numeric' as const,
 			hour12: true,
-			timeZone: userTimeZone
+			timeZone: 'America/Los_Angeles' // Force Pacific time
 		};
 
 		return new Date(theDate).toLocaleString('en-US', options);
-	}
+	};
 	function currentDistance() {
 		if (!store.getUiData.length) return 0;
 		// @ts-ignore
