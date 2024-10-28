@@ -4,6 +4,7 @@
 	import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
 	import { Radio, Button } from 'flowbite-svelte';
 	import { onMount } from 'svelte';
+	import { formatInTimeZone } from 'date-fns-tz';
 
 	let filter = $state('all');
 
@@ -53,22 +54,8 @@
 				return ``;
 		}
 	};
-	const doFormat = (theDate: Date) => {
-		console.log('Input to doFormat:', theDate, typeof theDate);
-
-		// If it's a string, convert to Date
-		const date = typeof theDate === 'string' ? new Date(theDate) : theDate;
-
-		const options = {
-			month: 'short' as const,
-			day: 'numeric' as const,
-			hour: 'numeric' as const,
-			minute: 'numeric' as const,
-			second: 'numeric' as const,
-			hour12: true
-		};
-
-		return date.toLocaleString('en-US', options);
+	const doFormat = (theDate: Date | string) => {
+		return formatInTimeZone(theDate, 'America/Los_Angeles', 'MMM d, h:mm:ss a');
 	};
 </script>
 
