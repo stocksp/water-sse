@@ -54,11 +54,18 @@
 				return ``;
 		}
 	};
-	const doFormat = (theDate: Date | string) => {
-		// Convert the UTC date to Pacific time
-		const pacificDate = toZonedTime(theDate, 'America/Los_Angeles');
 
-		return formatInTimeZone(pacificDate, 'America/Los_Angeles', 'MMM d, h:mm:ss a');
+	const doFormat = (theDate: Date) => {
+		const options = {
+			month: 'short' as const,
+			day: 'numeric' as const,
+			hour: 'numeric' as const,
+			minute: 'numeric' as const,
+			second: 'numeric' as const,
+			hour12: true
+		};
+
+		return new Date(theDate).toLocaleString('en-US', options);
 	};
 </script>
 
