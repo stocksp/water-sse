@@ -37,17 +37,16 @@
 		}
 	}
 	const doFormat = (theDate: Date) => {
-		// First convert the date to UTC string
-		const utcDate = new Date(theDate).toUTCString();
-		// Then create a new date from the UTC string and format it
-		return new Date(utcDate).toLocaleString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			hour: 'numeric',
-			minute: 'numeric',
-			second: 'numeric',
+		const options = {
+			month: 'short' as const,
+			day: 'numeric' as const,
+			hour: 'numeric' as const,
+			minute: 'numeric' as const,
+			second: 'numeric' as const,
 			hour12: true
-		});
+		};
+
+		return new Date(theDate).toLocaleString('en-US', options);
 	};
 	function currentDistance() {
 		if (!store.getUiData.length) return 0;
