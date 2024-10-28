@@ -4,7 +4,7 @@
 	import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
 	import { Radio, Button } from 'flowbite-svelte';
 	import { onMount } from 'svelte';
-	import { formatInTimeZone } from 'date-fns-tz';
+	import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 
 	let filter = $state('all');
 
@@ -55,10 +55,10 @@
 		}
 	};
 	const doFormat = (theDate: Date | string) => {
-		// Ensure we're treating the input as UTC
-		const utcString = typeof theDate === 'string' ? theDate : theDate.toISOString();
+		// Convert the UTC date to Pacific time
+		const pacificDate = toZonedTime(theDate, 'America/Los_Angeles');
 
-		return formatInTimeZone(utcString, 'America/Los_Angeles', 'MMM d, h:mm:ss a');
+		return formatInTimeZone(pacificDate, 'America/Los_Angeles', 'MMM d, h:mm:ss a');
 	};
 </script>
 
