@@ -55,7 +55,13 @@
 		}
 	};
 	const doFormat = (theDate: Date | string) => {
-		return formatInTimeZone(theDate, 'America/Los_Angeles', 'MMM d, h:mm:ss a');
+		// Ensure we're working with a UTC date
+		const utcDate = typeof theDate === 'string' ? new Date(theDate) : theDate;
+
+		// Force interpretation as UTC before formatting
+		const isoString = utcDate.toISOString();
+
+		return formatInTimeZone(isoString, 'America/Los_Angeles', 'MMM d, h:mm:ss a');
 	};
 </script>
 

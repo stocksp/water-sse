@@ -5,7 +5,6 @@ import { formatInTimeZone } from 'date-fns-tz'; // We'll need to install this
 
 export async function GET() {
     try {
-        // Get just the most recent climate record
         const [rows] = await pool.query<RowDataPacket[]>(
             `SELECT * FROM climate 
              ORDER BY \`when\` DESC LIMIT 1`
@@ -18,7 +17,7 @@ export async function GET() {
         const record = rows[0];
         const rawDate = record.when;
 
-        // Return various formats for comparison
+        // Add these diagnostic values
         return json({
             rawMySQLDate: rawDate,
             rawISOString: rawDate.toISOString(),
@@ -28,7 +27,13 @@ export async function GET() {
                 rawDate,
                 'America/Los_Angeles',
                 'MMM d, h:mm:ss a'
-            )
+            ),
+            // Add these new diagnostics
+            processTimezone: process.env.TZ,
+            nodeTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            rawDateType: typeof rawDate,
+            rawDateValue: String(rawDate),
+            unixTimestamp: rawDate.getTime()
         });
     } catch (error) {
         console.error('Test route error:', error);
