@@ -54,6 +54,10 @@
 		}
 	};
 	const doFormat = (theDate: Date) => {
+		// If we get a string, convert it to Date
+		const date = typeof theDate === 'string' ? new Date(theDate) : theDate;
+
+		// Create Pacific time date by explicitly handling the UTC input
 		const options = {
 			month: 'short' as const,
 			day: 'numeric' as const,
@@ -61,10 +65,11 @@
 			minute: 'numeric' as const,
 			second: 'numeric' as const,
 			hour12: true,
-			timeZone: 'America/Los_Angeles' // Force Pacific time
+			timeZone: 'America/Los_Angeles'
 		};
 
-		return new Date(theDate).toLocaleString('en-US', options);
+		// Don't create a new Date here since that can cause double conversion
+		return date.toLocaleString('en-US', options);
 	};
 </script>
 
