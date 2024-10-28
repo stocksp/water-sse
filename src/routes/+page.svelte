@@ -37,17 +37,18 @@
 		}
 	}
 	const doFormat = (theDate: Date) => {
-		const options = {
-			month: 'short' as const,
-			day: 'numeric' as const,
-			hour: 'numeric' as const,
-			minute: 'numeric' as const,
-			second: 'numeric' as const,
-			hour12: true,
-			timeZone: 'America/Los_Angeles' // Force Pacific time
-		};
+		// First convert the UTC time to Pacific time
+		const pacificTime = new Intl.DateTimeFormat('en-US', {
+			timeZone: 'America/Los_Angeles',
+			month: 'short',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: 'numeric',
+			second: 'numeric',
+			hour12: true
+		}).format(new Date(theDate));
 
-		return new Date(theDate).toLocaleString('en-US', options);
+		return pacificTime;
 	};
 	function currentDistance() {
 		if (!store.getUiData.length) return 0;
