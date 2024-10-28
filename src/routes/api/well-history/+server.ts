@@ -1,78 +1,164 @@
-import { getDb } from '$lib/server/mongo';
+import { pool } from '$lib/server/mysql';
 import convertToPower from '$lib/convertToPower';
 import getWellRuntimeData from '$lib/getWellRuntimeData';
-import { json } from '@sveltejs/kit'
+import { json } from '@sveltejs/kit';
+import type { RowDataPacket } from 'mysql2';
+import type { RequestHandler } from './$types';
 
 interface TheDataItem {
-	what: string;
-	when: Date;
-	dist: string | number;
+    what: string;
+    when: Date;
+    dist: string | number;
 }
 
-export async function GET() {
-	try {
-		console.log('===>starting getPumpHistory new one');
-
-		const db = await getDb();
-		// find last history
-		const ninetyDaysAgo = new Date();
-		ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90); // make it 90 days back!!
-		console.log('today', new Date(), 'ninetyDaysAgo', ninetyDaysAgo)
-		const hist = (await db
-			.collection('wellHistory')
-			.find({ when: { $gte: ninetyDaysAgo } })
-			.project({ _id: 0 })
-			.sort({ when: -1 })
-			.toArray()) as GroupItem[];
-		console.log(`history length: ${hist.length}`);
-		if (hist.length == 0) {
-			console.log('ninetyDaysAgo right before call', ninetyDaysAgo)
-			const groups = await getData(db, ninetyDaysAgo);
-			console.log(`groups length: ${groups.length} ${groups[0].when}`);
-			const resp = await db.collection('wellHistory').insertMany(groups);
-			console.log('groups 1', groups[0])
-			return json( { message: 'ok', fillSessions: groups });
-		} else {
-			//TODO activate this with a look back of 30 days if history older than that
-			// then update it!
-			//console.log('history', hist)
-			/* console.log('ninetyDaysAgo right before call', ninetyDaysAgo)
-			const newGroups = await getData(db, hist[0].when);
-			if (newGroups.length === 0) {
-				return json({ message: 'ok', fillSessions: hist });
-			}
-			console.log(`group length ${newGroups.length}, ${newGroups[0].sinceLastPump}`)
-			let resp = await db.collection('wellHistory').insertMany(newGroups);
-			return json({ message: 'ok', fillSessions: newGroups.concat(hist) }); */
-			return json({ message: 'ok', fillSessions: hist })
-		}
-	} catch (error) {
-		let message;
-		if (error instanceof Error) message = error.message;
-		else message = String(error);
-		return 'Error: ' + message;
-	}
+interface GroupItem {
+    when: Date;
+    dists: string;
+    frags: string;
+    sinceLastPump: number;
+    time: number;
 }
 
-const getData = async (db: Db, date: Date) => {
-	console.log('date is', date)
-	const distDocs = (await db
-		.collection('waterDistance')
-		.find({ when: { $gt: date } })
-		.project({ _id: 0 })
-		.sort({ _id: -1 })
-		.toArray()) as DistDoc[];
-		console.log('dist docs length', distDocs.length)
-	let powerDocs = (await db
-		.collection('power')
-		.find({
-			when: { $gt: date }
-		})
-		.project({ _id: 0 })
-		.sort({ _id: -1 })
-		.toArray())as PowerDoc[];
+export const GET: RequestHandler = async () => {
+    try {
+        console.log('===>starting getPumpHistory new one');
 
-	const uiData: UIData = convertToPower({ distDocs, powerDocs });
-	console.log('===>before getwellRuntimeData', uiData )
-	return getWellRuntimeData(uiData);
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        console.log('today', new Date(), 'ninetyDaysAgo', ninetyDaysAgo);
+
+        const [histRows] = await pool.query<RowDataPacket[]>(
+            `SELECT 'when', dists, frags, sinceLastPump, time 
+             FROM wellHistory 
+             WHERE 'when' >= ? 
+             ORDER BY 'when' DESC`,
+            [ninetyDaysAgo]
+        );
+
+        const hist = histRows.map(row => ({
+            when: row.when,
+            dists: row.dists,
+            frags: row.frags,
+            sinceLastPump: row.sinceLastPump,
+            time: row.time
+        }));
+
+        console.log(`history length: ${hist.length}`);
+        
+        if (hist.length == 0) {
+            const groups = await getData(ninetyDaysAgo);
+            
+            if (groups.length > 0) {
+                const insertValues = groups.map(group => [
+                    group.when,
+                    group.dists,
+                    group.frags,
+                    group.sinceLastPump,
+                    group.time
+                ]);
+
+                await pool.query(
+                    `INSERT INTO wellHistory ('when', dists, frags, sinceLastPump, time) 
+                     VALUES ?`,
+                    [insertValues]
+                );
+
+                return json({ message: 'ok', fillSessions: groups });
+            }
+            return json({ message: 'ok', fillSessions: [] });
+        } else {
+            const mostRecentHistoryDate = new Date(hist[0].when);
+            console.log('Most recent history date:', mostRecentHistoryDate);
+
+            const newGroups = await getData(mostRecentHistoryDate);
+            
+            if (newGroups.length > 0) {
+                console.log('Found new groups:', newGroups.length, 'First new group:', newGroups[0]);
+                
+                const insertValues = newGroups.map(group => [
+                    group.when,
+                    group.dists,
+                    group.frags,
+                    group.sinceLastPump,
+                    group.time
+                ]);
+
+                await pool.query(
+                    `INSERT INTO wellHistory ('when', dists, frags, sinceLastPump, time) 
+                     VALUES ?`,
+                    [insertValues]
+                );
+
+                return json({ message: 'ok', fillSessions: newGroups.concat(hist) });
+            }
+
+            return json({ message: 'ok', fillSessions: hist });
+        }
+    } catch (error) {
+        console.error('Error in GET:', error);
+        return json(
+            { message: 'error', error: error instanceof Error ? error.message : String(error) },
+            { status: 500 }
+        );
+    }
+};
+const getData = async (date: Date) => {
+    try {
+        console.log('getData starting with date:', date.toLocaleString());
+
+        // Get water distance data
+        const [distRows] = await pool.query<RowDataPacket[]>(
+            `SELECT id, distance, 'when' 
+             FROM waterDistance 
+             WHERE 'when' > ? 
+             ORDER BY id DESC`,
+            [date]
+        );
+
+        const distDocs = distRows.map(row => ({
+            when: row.when,
+            distance: row.distance
+        }));
+
+        console.log('dist docs found:', distDocs.length);
+
+        // Get power data
+        const powerLookback = new Date(date.getTime() - (60 * 60 * 1000));
+        const [powerRows] = await pool.query<RowDataPacket[]>(
+            `SELECT id, pump, state, 'when', runTime 
+             FROM power 
+             WHERE 'when' > ? 
+             ORDER BY id DESC`,
+            [powerLookback]
+        );
+
+        const powerDocs = powerRows.map(row => ({
+            when: row.when,
+            pump: row.pump,
+            state: row.state,
+            runTime: row.runTime
+        }));
+
+        console.log('power docs found:', powerDocs.length);
+
+        // Convert the data - this now returns an array
+        const combinedData = convertToPower({ distDocs, powerDocs });
+        
+        if (!Array.isArray(combinedData)) {
+            console.error('convertToPower did not return an array');
+            return [];
+        }
+
+        console.log('Combined data length:', combinedData.length);
+
+        // Pass the combined array directly to getWellRuntimeData
+        const runtimeData = getWellRuntimeData(combinedData);
+        
+        console.log('Runtime data length:', runtimeData?.length);
+
+        return runtimeData || [];
+    } catch (error) {
+        console.error('Error in getData:', error);
+        return [];
+    }
 };

@@ -1,53 +1,70 @@
 // getWaterData.ts
-import { getDb } from '$lib/server/mongo';
+import { pool } from '$lib/server/mysql';
+import type { RowDataPacket } from 'mysql2';
 
 export const getWaterData = async (lookBackTime: Date): Promise<WaterData> => {
-	try {
-		console.log(
-			'starting getGetWaterData!',
-			new Date().toLocaleString(),
-			'from',
-			lookBackTime.toLocaleString()
-		);
-		const db = await getDb();
+    try {
+        console.log(
+            'starting getGetWaterData sql!',
+            new Date().toLocaleString(),
+            'from',
+            lookBackTime.toLocaleString()
+        );
 
-		const distDocs = (await db
-			.collection('waterDistance')
-			.find({ when: { $gt: lookBackTime } })
-			.project({ _id: 0 })
-			.sort({ _id: -1 })
-			.toArray()) as DistDoc[];
+        // Get water distance data
+        const [distRows] = await pool.query<RowDataPacket[]>(
+            `SELECT id, distance, \`when\` 
+             FROM waterDistance 
+             WHERE \`when\` > ? 
+             ORDER BY id DESC`,
+            [lookBackTime]
+        );
 
-		const powerDocs = (await db
-			.collection('power')
-			.find({
-				when: { $gt: lookBackTime }
-			})
-			.project({ _id: 0 })
-			.sort({ _id: -1 })
-			.toArray()) as PowerDoc[];
+        // Get power data
+        const [powerRows] = await pool.query<RowDataPacket[]>(
+            `SELECT id, pump, state, \`when\`, runTime 
+             FROM power 
+             WHERE \`when\` > ? 
+             ORDER BY id DESC`,
+            [lookBackTime]
+        );
 
-		console.log('found', distDocs.length, powerDocs.length, formatDate(Date.now()));
-		return { message: 'ok', distDocs, powerDocs };
-	} catch (error) {
-		let message;
-		if (error instanceof Error) message = error.message;
-		else message = String(error);
-		console.log('bad news in mongo', message);
-		return { message: 'error', distDocs: [], powerDocs: [], Error: message };
-	}
+        // Convert rows to your document format
+        const distDocs = distRows.map(row => ({
+            when: row.when,
+            distance: row.distance
+        }));
+
+        const powerDocs = powerRows.map(row => ({
+            when: row.when,
+            pump: row.pump,
+            state: row.state,
+            runTime: row.runTime
+        }));
+
+        console.log('found', distDocs.length, powerDocs.length, formatDate(Date.now()));
+        return { message: 'ok', distDocs, powerDocs };
+
+    } catch (error) {
+        let message;
+        if (error instanceof Error) message = error.message;
+        else message = String(error);
+        console.log('bad news in mysql', message);
+        return { message: 'error', distDocs: [], powerDocs: [], Error: message };
+    }
 };
-const formatDate = (timestamp: number): string => {
-	const date = new Date(timestamp);
-	const options: Intl.DateTimeFormatOptions = {
-		year: 'numeric',
-		month: 'short',
-		day: 'numeric',
-		hour: 'numeric',
-		minute: 'numeric',
-		second: 'numeric',
-		hour12: true
-	};
 
-	return new Intl.DateTimeFormat('en-US', options).format(date);
+const formatDate = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    const options: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: true
+    };
+
+    return new Intl.DateTimeFormat('en-US', options).format(date);
 };
