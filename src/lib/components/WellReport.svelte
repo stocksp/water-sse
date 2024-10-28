@@ -1,18 +1,10 @@
 <script lang="ts">
-	import {
-		Table,
-		TableBody,
-		TableBodyCell,
-		TableBodyRow,
-		TableHead,
-		TableHeadCell,
-		
-	} from 'flowbite-svelte';
+	import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
 
 	import { page } from '$app/stores';
 	import { store } from '$lib/uiData.svelte';
 
-	let { groups, title }: { groups: GroupItem[], title: string } = $props();
+	let { groups, title }: { groups: GroupItem[]; title: string } = $props();
 	const getBGColor = (data: any) => {
 		switch (data.pump) {
 			case 'well':
@@ -23,7 +15,8 @@
 				return ``;
 		}
 	};
-	function doFormat(theDate: Date) {
+	const doFormat = (theDate: Date) => {
+		const realDate = new Date(theDate);
 		const options = {
 			month: 'short' as 'short' | 'numeric' | '2-digit' | 'long' | 'narrow',
 			day: 'numeric' as 'numeric' | '2-digit',
@@ -33,20 +26,19 @@
 			hour12: true
 		};
 
-		return theDate.toLocaleString('en-US', options);
-	}
+		return realDate.toLocaleString('en-US', options);
+	};
 	//$inspect(groups)
 </script>
 
 <h1 class="text-center lg:text-2xl">{title}</h1>
 <Table>
 	<TableHead>
-
-			<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold">Time</TableHeadCell>
-			<TableHeadCell class="w-[250px] px-4 py-3 text-black md:font-extrabold">Fragments</TableHeadCell>
-			<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold">Start-End</TableHeadCell>
-			<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold">Hours<br /> since</TableHeadCell>
-			<TableHeadCell class="w-[200px] px-4 py-3 text-black md:font-extrabold">When ended</TableHeadCell>
+		<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold">Time</TableHeadCell>
+		<TableHeadCell class="w-[250px] px-4 py-3 text-black md:font-extrabold">Fragments</TableHeadCell>
+		<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold">Start-End</TableHeadCell>
+		<TableHeadCell class="w-[150px] px-4 py-3 text-black md:font-extrabold">Hours<br /> since</TableHeadCell>
+		<TableHeadCell class="w-[200px] px-4 py-3 text-black md:font-extrabold">When ended</TableHeadCell>
 	</TableHead>
 
 	<TableBody>
@@ -63,5 +55,4 @@
 </Table>
 
 <style>
-	
 </style>
