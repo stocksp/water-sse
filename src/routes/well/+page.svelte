@@ -7,34 +7,42 @@
 		const item = localStorage['history'];
 		if (item) {
 			let val = JSON.parse(item);
-//console.log('history from storage before', val.fillSessions);
 			val = val.fillSessions.map((doc: any) => {
 				doc.when = new Date(doc.when);
 				return doc;
 			});
-		//	console.log('history from storage after map', val);
-			return {message: "ok", fillSessions: val}
+
+			// Check if the first element is older than 7 days
+			const oneWeekAgo = new Date();
+			oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+			// If data is fresh (less than 7 days old), return it
+			if (val.length > 0 && val[0].when > oneWeekAgo) {
+				return { message: 'ok', fillSessions: val };
+			}
+			// If data is older than 7 days, continue to API call
 		}
+		console.log("updating well fill history!")
+		// Fetch new data from API
 		const response = await fetch('/api/well-history');
 		let history = await response.json();
-		//console.log('history from api', history);
-		let sessions = history.fillSessions.map((doc:any) => {
+		let sessions = history.fillSessions.map((doc: any) => {
 			doc.when = new Date(doc.when);
-				return doc;
-		})
-		
-		localStorage.setItem('history', JSON.stringify({message: "ok", fillSessions: sessions}));
-		return {message: "ok", fillSessions: sessions};
+			return doc;
+		});
+
+		localStorage.setItem('history', JSON.stringify({ message: 'ok', fillSessions: sessions }));
+		return { message: 'ok', fillSessions: sessions };
 	}
 </script>
 
 {#if store.getUiData.length > 0}
-	<WellReport groups={getWellRuntimeData(store.getUiData)} title={"Pump Filling Stats"}/>
+	<WellReport groups={getWellRuntimeData(store.getUiData)} title={'Pump Filling Stats'} />
 
 	{#await getHistory()}
 		<p>Loading...</p>
 	{:then history}
-		<WellReport groups={history.fillSessions} title={"History Pump Filling Stats"}/>
+		<WellReport groups={history.fillSessions} title={'History Pump Filling Stats'} />
 	{:catch error}
 		<p>{error.message}</p>
 	{/await}
