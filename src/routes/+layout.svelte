@@ -23,6 +23,10 @@
 	let reconnectTimeout: NodeJS.Timeout | null = null;
 	let pingInterval: NodeJS.Timeout | null = null;
 
+	let isWellRunningHTML = $state('')
+	let isPressureRunningHTML = $state('')
+
+
 	function handleMessage(event: MessageEvent) {
 		//console.log('Received SSE message:', event.data);
 
@@ -91,7 +95,8 @@
 		}
 	});
 	$effect(() => {
-
+		isWellRunningHTML = isWellRunning()
+		isPressureRunningHTML = isPressureRunning()
 	})
 	const scheduleReconnect = () => {
 		console.log('scheduleReconnect called'); //ADDED DEBUG
@@ -227,8 +232,8 @@
 				Current well distance <strong>{currentDistance()}</strong>{' '}
 			</h3>
 			<h3 class="text-center lg:text-xl">Active Connections now: {store.getActiveConnections}</h3>
-			{@html isWellRunning()}
-			{@html isPressureRunning()}
+			{@html isWellRunningHTML}
+			{@html isPressureRunningHTML}
 		{/if}
 
 		{@render children()}

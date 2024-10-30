@@ -22,7 +22,7 @@
 			}
 			// If data is older than 7 days, continue to API call
 		}
-		console.log("updating well fill history!")
+		console.log('updating well fill history!');
 		// Fetch new data from API
 		const response = await fetch('/api/well-history');
 		let history = await response.json();
