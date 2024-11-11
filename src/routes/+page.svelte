@@ -48,37 +48,7 @@
 
 		return new Date(theDate).toLocaleString('en-US', options);
 	};
-	function currentDistance() {
-		if (!store.getUiData.length) return 0;
-		// @ts-ignore
-		return store.getUiData.find((v) => v.distance).distance;
-	}
-	function isWellRunning() {
-		const resp = store.getUiData.find((v) => 'state' in v && v.state === 'Well running') as PowerDoc | undefined;
-		if (resp) {
-			const formattedTime = resp.when.toLocaleTimeString('en-US', {
-				hour: 'numeric',
-				minute: '2-digit',
-				second: '2-digit',
-				hour12: true
-			});
-			return `<h4 style="background-color: rgba(255, 99, 71, 0.5)">Well pump is on... started ${formattedTime}</h4>`;
-		}
-		return '';
-	}
-	function isPressureRunning() {
-		const resp = store.getUiData.find((v) => 'state' in v && v.state === 'Pressure running') as PowerDoc | undefined;
-		if (resp) {
-			const formattedTime = resp.when.toLocaleTimeString('en-US', {
-				hour: 'numeric',
-				minute: '2-digit',
-				second: '2-digit',
-				hour12: true
-			});
-			return `<h4 class="text-center" style="background-color: rgba(173, 175, 204)">Pressure pump is on... started ${formattedTime}</h4>`;
-		}
-		return '';
-	}
+	
 </script>
 
 {#if store.getUiData.length > 0}

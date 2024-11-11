@@ -15,7 +15,7 @@
 	let reconnectAttempts = 0;
 
 	let isVisible = $state(true);
-	let activeUrl = $derived($page.url.pathname)
+	let activeUrl = $derived($page.url.pathname);
 
 	let eventSource: EventSource | null = null;
 	let reconnectMaxDelay = 15000;
@@ -23,9 +23,8 @@
 	let reconnectTimeout: NodeJS.Timeout | null = null;
 	let pingInterval: NodeJS.Timeout | null = null;
 
-	let isWellRunningHTML = $state('')
-	let isPressureRunningHTML = $state('')
-
+	let isWellRunningHTML = $state('');
+	let isPressureRunningHTML = $state('');
 
 	function handleMessage(event: MessageEvent) {
 		//console.log('Received SSE message:', event.data);
@@ -38,18 +37,21 @@
 			console.log('Parse error:', error);
 			data = event.data;
 		}
-		
+
 		if (typeof data === 'object') {
 			if (data.message === 'initial_data') {
-				const waterData: WaterData = data.data;
-				//console.log('Received initial data:',typeof waterData.distDocs[0].when);
 				const newData: UIData = convertToPower(data.data);
-				//console.log('initial data', newData);
 				store.setUiData(newData);
 			} else if (data.message === 'new_data') {
-				const waterData: WaterData = data.data;
-				//console.log('Received new water data:', waterData);
 				const newData: UIData = convertToPower(data.data);
+				// We may have a "Pressure running" in currentData AND we are getting a "Pressure ran"
+				// This requires that we remove this "Pressure running" from the display data as we only keep the
+				// runTime for the pressure pump
+				// First, remove any existing 'pressure running' entries
+				const hasPressureRan = newData.some((doc) => 'pump' in doc && doc.pump === 'pressure' && doc.state === 'Pressure ran');
+				if (hasPressureRan) {
+					store.removeRunningPressurePump();
+				}
 				store.setUiData((currentData) => [...newData, ...currentData]);
 			} else if (data.message === 'connection_status') {
 				store.setActiveConnections(data.activeConnections);
@@ -95,9 +97,9 @@
 		}
 	});
 	$effect(() => {
-		isWellRunningHTML = isWellRunning()
-		isPressureRunningHTML = isPressureRunning()
-	})
+		isWellRunningHTML = isWellRunning();
+		isPressureRunningHTML = isPressureRunning();
+	});
 	const scheduleReconnect = () => {
 		console.log('scheduleReconnect called'); //ADDED DEBUG
 		if (reconnectTimeout) {
@@ -178,9 +180,7 @@
 		return store.getUiData.find((v) => v.distance).distance;
 	}
 	function isWellRunning() {
-		const resp = store.getUiData.find((v) => 'state' in v && v.state === 'Well running') as
-			| PowerDoc
-			| undefined;
+		const resp = store.getUiData.find((v) => 'state' in v && v.state === 'Well running') as PowerDoc | undefined;
 		if (resp) {
 			const formattedTime = resp.when.toLocaleTimeString('en-US', {
 				hour: 'numeric',
@@ -193,9 +193,7 @@
 		return '';
 	}
 	function isPressureRunning() {
-		const resp = store.getUiData.find((v) => 'state' in v && v.state === 'Pressure running') as
-			| PowerDoc
-			| undefined;
+		const resp = store.getUiData.find((v) => 'state' in v && v.state === 'Pressure running') as PowerDoc | undefined;
 		if (resp) {
 			const formattedTime = resp.when.toLocaleTimeString('en-US', {
 				hour: 'numeric',
@@ -211,8 +209,7 @@
 
 <div class="app">
 	<main>
-		
-		<Navbar >
+		<Navbar>
 			<NavHamburger />
 			<NavUl {activeUrl}>
 				<NavLi href="/" class="text-xl">Home</NavLi>
