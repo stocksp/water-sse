@@ -4,12 +4,12 @@ import type { RowDataPacket } from 'mysql2';
 
 export const getWaterData = async (lookBackTime: Date): Promise<WaterData> => {
     try {
-        console.log(
-            'starting getGetWaterData sql!',
-            new Date().toLocaleString(),
-            'from',
-            lookBackTime.toLocaleString()
-        );
+        // console.log(
+        //     'starting getGetWaterData sql!',
+        //     new Date().toLocaleString(),
+        //     'from',
+        //     lookBackTime.toLocaleString()
+        // );
 
         // Get water distance data
         const [distRows] = await pool.query<RowDataPacket[]>(
@@ -42,7 +42,7 @@ export const getWaterData = async (lookBackTime: Date): Promise<WaterData> => {
             runTime: row.runTime
         }));
 
-        console.log('found', distDocs.length, powerDocs.length, formatDate(Date.now()));
+        //console.log('found', distDocs.length, powerDocs.length, formatDate(Date.now()));
         return { message: 'ok', distDocs, powerDocs };
 
     } catch (error) {

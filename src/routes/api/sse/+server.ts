@@ -11,7 +11,7 @@ let savedWaterData: WaterData = { message: 'ok', distDocs: [], powerDocs: [] };
 
 function sendSSEMessage(message: string | object) {
 	const now = Date.now();
-	console.log('connections:', connections.size)
+	//console.log('connections:', connections.size)
 	connections.forEach((connection, id) => {
 		if (now - connection.lastPing > 30000) {
 			connections.delete(id);
@@ -51,7 +51,7 @@ function getLookbackDate(data: WaterData): Date {
 	if (data.powerDocs.length > 0) dates.push(new Date(data.powerDocs[0].when));
 	const result =
 		dates.length > 0 ? new Date(Math.max(...dates.map((d) => d.getTime()))) : lookbackDate;
-	console.log('getLookbackDate result:', result.toLocaleString());
+	//console.log('getLookbackDate result:', result.toLocaleString());
 	return result;
 }
 
@@ -63,16 +63,16 @@ function updateSavedData(newData: WaterData) {
 async function fetchAndProcessWaterData() {
 	try {
 		const waterData: WaterData = await getWaterData(lookbackDate);
-		console.log('New Water Data:', {
-			message: waterData.message,
-			distDocs: waterData.distDocs.length,
-			powerDocs: waterData.powerDocs.length
-		});
+		// console.log('New Water Data:', {
+		// 	message: waterData.message,
+		// 	distDocs: waterData.distDocs.length,
+		// 	powerDocs: waterData.powerDocs.length
+		// });
 
 		if (waterData.message === 'ok') {
 			const newLookbackDate = getLookbackDate(waterData);
-			console.log('Current lookbackDate:', lookbackDate.toLocaleString());
-			console.log('New lookbackDate:', newLookbackDate.toLocaleString());
+			//console.log('Current lookbackDate:', lookbackDate.toLocaleString());
+			//console.log('New lookbackDate:', newLookbackDate.toLocaleString());
 
 			if (newLookbackDate > lookbackDate) {
 				lookbackDate = newLookbackDate;
@@ -83,13 +83,13 @@ async function fetchAndProcessWaterData() {
 						data: waterData
 					})
 				);
-				console.log('Sent new data to clients');
+				//console.log('Sent new data to clients');
 			} else {
-				console.log(
-					'No new data to send (newLookbackDate <= lookbackDate)',
-					'connections',
-					connections.size
-				);
+				// console.log(
+				// 	'No new data to send (newLookbackDate <= lookbackDate)',
+				// 	'connections',
+				// 	connections.size
+				// );
 			}
 		} else {
 			console.error('Error in water data:', waterData.Error);
@@ -208,7 +208,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	
 	const { connectionId } = await request.json();
 	const connection = connections.get(connectionId);
-	console.log('POST handler connectionId:', connectionId)
+	//console.log('POST handler connectionId:', connectionId)
 	if (connection) {
 		connection.lastPing = Date.now();
 	}

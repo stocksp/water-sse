@@ -4,7 +4,6 @@ interface TheDataItem {
 	dist: string | number;
 }
 
-
 function makeTime(seconds: number): string {
 	return (seconds / 60).toFixed(1) + ' mins';
 }
@@ -21,18 +20,15 @@ function differenceInMinutes(date1: Date, date2: Date): number {
 
 const getDistVal = (date: Date, arr: UIData): number => {
 	const dists = arr
-		.filter((item) => 'distance' in item )
-		.sort(
-			(a, b) =>
-				Math.abs(date.getTime() - a.when.getTime()) - Math.abs(date.getTime() - b.when.getTime())
-		);
+		.filter((item) => 'distance' in item)
+		.sort((a, b) => Math.abs(date.getTime() - a.when.getTime()) - Math.abs(date.getTime() - b.when.getTime()));
 
 	return dists.length > 0 ? dists[0].distance : 0;
 };
 
 const getWellRuntimeData = (d: UIData): GroupItem[] => {
 	if (d.length === 0) return [];
-	const theDists = d.filter((item) => 'distance' in item)
+	const theDists = d.filter((item) => 'distance' in item);
 
 	//console.log('Input data length:', d.length);
 
@@ -61,14 +57,28 @@ const getWellRuntimeData = (d: UIData): GroupItem[] => {
 	theData.forEach((v, i, arr) => {
 		if (!group.length) {
 			if (v.what === 'Well starting') group.push(v);
+
+			// if (v.when.toLocaleDateString() === '7/8/2025') {
+			// 	console.log('starting new group well starting', v.when.toLocaleDateString());
+			// }
 		} else {
 			if (v.what === 'Well starting') {
 				const pumpSpan = 210;
 				const previous = group[group.length - 1];
 				const diff = differenceInMinutes(v.when, previous.when);
-				if (diff < pumpSpan + parseFloat(previous.dist.toString())) {
+
+				//console.log('diff', diff, v.when.toLocaleTimeString(), previous.when.toLocaleTimeString());
+
+				if (diff <= pumpSpan) {
 					group.push(v);
+					// if (v.when.toLocaleDateString() === '7/8/2025') {
+					// 	console.log('adding to group', v.what, diff, parseFloat(previous.dist.toString()));
+					// }
 				} else {
+					// if (v.when.toLocaleDateString() === '7/8/2025') {
+					// 	console.log('ending group starting another', v.what, diff);
+					// }
+
 					groups.push(group);
 					group = [];
 					group.push(v);
@@ -76,6 +86,10 @@ const getWellRuntimeData = (d: UIData): GroupItem[] => {
 			}
 
 			if (v.what === 'Well ran') {
+				// if (v.when.toLocaleDateString() === '7/9/2025') {
+				// 	console.log('starting new group Well ran', v.when.toLocaleDateString(), v.what);
+				// }
+
 				group.push(v);
 			}
 		}
@@ -89,26 +103,38 @@ const getWellRuntimeData = (d: UIData): GroupItem[] => {
 	// Reverse the groups to get them in chronological order
 	groups.reverse();
 
-	//console.log('Number of groups:', groups.length);
+	console.log('Number of groups:', groups.length);
 
 	const finalGroups: GroupItem[] = groups.map((v, i, arr): GroupItem => {
-		let time = v
-			.filter((o) => o.what === 'Well ran')
-			.reduce((a, b) => a + parseFloat(b.dist.toString()), 0);
+		let time = v.filter((o) => o.what === 'Well ran').reduce((a, b) => a + parseFloat(b.dist.toString()), 0);
 		time = Math.round(time * 10) / 10;
 
-		const frags = v
+		let frags = v
 			.filter((o) => o.what === 'Well ran')
 			.map((o) => o.dist.toString().split(' ')[0])
 			.join('+');
+
+		// Truncate if longer than 100 characters
+		if (frags.length > 100) {
+			const parts = frags.split('+');
+			frags = '';
+
+			for (const part of parts) {
+				const nextFragment = frags ? frags + '+' + part : part;
+				if (nextFragment.length <= 100) {
+					frags = nextFragment;
+				} else {
+					break;
+				}
+			}
+		}
 
 		const startDist = getDistVal(v[0].when, d);
 		const endDist = getDistVal(v[v.length - 1].when, d);
 		const distStr = `${startDist.toFixed(1)}-${endDist.toFixed(1)}`;
 		// compare the start of this session with the end of the last
-		const sinceLastPump =
-			i < arr.length -1 ? differenceInHours(v[0].when, arr[i + 1][arr[i + 1].length -1].when) : 0;
-			
+		const sinceLastPump = i < arr.length - 1 ? differenceInHours(v[0].when, arr[i + 1][arr[i + 1].length - 1].when) : 0;
+
 		return {
 			time,
 			frags,
