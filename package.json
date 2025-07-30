@@ -15,7 +15,7 @@
 		"@neoconfetti/svelte": "^2.2.2",
 		"@sveltejs/adapter-auto": "^3.3.1",
 		"@sveltejs/kit": "^2.26.1",
-		"@sveltejs/vite-plugin-svelte": "^4.0.0",
+		"@sveltejs/vite-plugin-svelte": "^4.0.4",
 		"@types/eslint": "^9.6.1",
 		"@types/node": "^22.8.1",
 		"autoprefixer": "^10.4.21",
