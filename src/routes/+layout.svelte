@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { browser } from '$app/environment';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { onMount, onDestroy } from 'svelte';
 
 	import convertToPower from '$lib/convertToPower';
@@ -15,7 +15,7 @@
 	let reconnectAttempts = 0;
 
 	let isVisible = $state(true);
-	let activeUrl = $derived($page.url.pathname);
+	let activeUrl = $derived(page.url.pathname);
 
 	let eventSource: EventSource | null = null;
 	let reconnectMaxDelay = 15000;
@@ -209,20 +209,15 @@
 
 <div class="app">
 	<main>
-		<div class="mb-4 bg-blue-500 p-4 text-white">This should be blue with white text and padding</div>
-		<!-- Add a visible wrapper to see if Navbar exists -->
-		<div style="border: 2px solid red; background: yellow;">
-			<p>Navbar should be below this line:</p>
-			<Navbar>
-				<NavHamburger />
-				<NavUl {activeUrl}>
-					<NavLi href="/" class="text-xl">Home</NavLi>
-					<NavLi href="/well" class="text-xl">Well Report</NavLi>
-					<NavLi href="/climate" class="text-xl">Climate Report</NavLi>
-				</NavUl>
-			</Navbar>
-			<p>Navbar should be above this line</p>
-		</div>
+		<Navbar>
+			<NavHamburger />
+			<NavUl {activeUrl}>
+				<NavLi href="/" class="text-xl">Home</NavLi>
+				<NavLi href="/well" class="text-xl">Well Report</NavLi>
+				<NavLi href="/climate" class="text-xl">Climate Report</NavLi>
+			</NavUl>
+		</Navbar>
+		
 		<h1 class="text-center lg:text-4xl">
 			<span class="tinyIcon">💦</span>
 			<span class="mediumIcon">💦</span>

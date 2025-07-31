@@ -61,7 +61,7 @@
 
 		<TableBody>
 			{#each store.getUiData as r, i (i)}
-				<TableBodyRow class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900' : ''} style={getBGColor(r)}>
+				<TableBodyRow class={i % 2 === 0 ? 'bg-gray-100 text-black dark:bg-gray-900' : 'text-black'} style={getBGColor(r)}>
 					<TableBodyCell class="px-4 py-2">{getWhat(r)}</TableBodyCell>
 					<TableBodyCell class="px-4 py-2">{@html doFormat((r as unknown as PowerDoc | DistDoc).when)}</TableBodyCell>
 					<TableBodyCell class="px-4 py-2">{doTd(r)}</TableBodyCell>

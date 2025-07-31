@@ -5,16 +5,7 @@
 	import { store } from '$lib/uiData.svelte';
 
 	let { groups, title }: { groups: GroupItem[]; title: string } = $props();
-	const getBGColor = (data: any) => {
-		switch (data.pump) {
-			case 'well':
-				return `background-color: rgba(255, 99, 71, 0.5)`;
-			case 'pressure':
-				return `background-color: rgb(173, 175, 204)`;
-			default:
-				return ``;
-		}
-	};
+	
 	const doFormat = (theDate: Date) => {
 		const options = {
 			month: 'short' as const,
@@ -43,7 +34,7 @@
 
 	<TableBody>
 		{#each groups as r, i (i)}
-			<TableBodyRow class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900' : ''} style={getBGColor(r)}>
+			<TableBodyRow class={i % 2 === 0 ? 'text-black bg-gray-100 dark:bg-gray-900' : 'text-black'} >
 				<TableBodyCell class="px-4 py-2">{r.time}</TableBodyCell>
 				<TableBodyCell class="px-4 py-2">{r.frags}</TableBodyCell>
 				<TableBodyCell class="px-4 py-2">{r.dists}</TableBodyCell>
