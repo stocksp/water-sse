@@ -11,6 +11,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [tailwindcss(), sveltekit()],
+    preview: {
+       allowedHosts: ['water.stocks1.dev', 'localhost']
+    },
     define: {
       'import.meta.env.VITE_BUILD_INFO': JSON.stringify({
         branchName: getBranchName(),
