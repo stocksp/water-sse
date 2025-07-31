@@ -1,4 +1,5 @@
 import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, loadEnv } from 'vite';
 import { execSync } from 'child_process';
 
@@ -9,7 +10,7 @@ const getBuildDate = () => new Date().toISOString();
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
-    plugins: [sveltekit()],
+    plugins: [tailwindcss(), sveltekit()],
     define: {
       'import.meta.env.VITE_BUILD_INFO': JSON.stringify({
         branchName: getBranchName(),

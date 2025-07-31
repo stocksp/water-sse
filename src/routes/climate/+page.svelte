@@ -43,16 +43,7 @@
 			// Handle the error (e.g., display a generic error message)
 		}
 	}
-	const getBGColor = (data: any) => {
-		switch (data.pump) {
-			case 'well':
-				return `background-color: rgba(255, 99, 71, 0.5)`;
-			case 'pressure':
-				return `background-color: rgb(173, 175, 204)`;
-			default:
-				return ``;
-		}
-	};
+	
 
 	const doFormat = (theDate: Date) => {
 		const options = {
@@ -91,7 +82,7 @@
 
 		<TableBody>
 			{#each filterData(climateData) as r, i (i)}
-				<TableBodyRow class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900' : ''} style={getBGColor(r)}>
+				<TableBodyRow class={i % 2 === 0 ? 'bg-gray-100 dark:bg-gray-900 text-black' : 'text-black'} >
 					<TableBodyCell class="px-4 py-2">{r.name}</TableBodyCell>
 					<TableBodyCell class="px-4 py-2">{r.temperature}</TableBodyCell>
 					<TableBodyCell class="px-4 py-2">{r.humidity}</TableBodyCell>
