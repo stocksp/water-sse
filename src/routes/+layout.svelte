@@ -209,14 +209,20 @@
 
 <div class="app">
 	<main>
-		<Navbar>
-			<NavHamburger />
-			<NavUl {activeUrl}>
-				<NavLi href="/" class="text-xl">Home</NavLi>
-				<NavLi href="/well" class="text-xl">Well Report</NavLi>
-				<NavLi href="/climate" class="text-xl">Climate Report</NavLi>
-			</NavUl>
-		</Navbar>
+		<div class="mb-4 bg-blue-500 p-4 text-white">This should be blue with white text and padding</div>
+		<!-- Add a visible wrapper to see if Navbar exists -->
+		<div style="border: 2px solid red; background: yellow;">
+			<p>Navbar should be below this line:</p>
+			<Navbar>
+				<NavHamburger />
+				<NavUl {activeUrl}>
+					<NavLi href="/" class="text-xl">Home</NavLi>
+					<NavLi href="/well" class="text-xl">Well Report</NavLi>
+					<NavLi href="/climate" class="text-xl">Climate Report</NavLi>
+				</NavUl>
+			</Navbar>
+			<p>Navbar should be above this line</p>
+		</div>
 		<h1 class="text-center lg:text-4xl">
 			<span class="tinyIcon">💦</span>
 			<span class="mediumIcon">💦</span>
