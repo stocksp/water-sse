@@ -50,5 +50,3 @@
 	<div>NO Data, {store.getUiData.length}</div>
 {/if}
 
-<style>
-</style>

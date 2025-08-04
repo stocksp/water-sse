@@ -231,8 +231,8 @@
 	}
 </script>
 
-<div class="app">
-	<main>
+<div class="flex flex-col min-h-screen">
+	<main class="flex-1 flex flex-col p-4 w-full max-w-screen-xl mx-auto box-border">
 		<header class="flex justify-between">
 			<Navbar>
 				<NavHamburger />
@@ -273,7 +273,7 @@
 			</div>
 		</header>
 
-		<h1 class="text-center lg:text-4xl">
+		<h1 class="text-center text-2xl lg:text-4xl">
 			<span class="tinyIcon">💦</span>
 			<span class="mediumIcon">💦</span>
 			💦Water Report💦
@@ -281,7 +281,7 @@
 			<span class="tinyIcon">💦</span>
 		</h1>
 		{#if store.getUiData.length > 0}
-			<h3 class="text-center lg:text-2xl">
+			<h3 class="text-center text-xl">
 				Current well distance <strong>{currentDistance()}</strong>{' '}
 			</h3>
 			<h3 class="text-center lg:text-xl">Active Connections now: {store.getActiveConnections}</h3>
@@ -292,22 +292,3 @@
 		{@render children()}
 	</main>
 </div>
-
-<style>
-	.app {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-	}
-
-	main {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		padding: 1rem;
-		width: 100%;
-		max-width: 64rem;
-		margin: 0 auto;
-		box-sizing: border-box;
-	}
-</style>
