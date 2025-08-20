@@ -242,7 +242,7 @@
 					<NavLi href="/climate" class="text-xl">Climate Report</NavLi>
 				</NavUl>
 			</Navbar>
-			<div class="corner relative h-12 w-12">
+			<div class="relative h-12 w-12">
 				<!-- svelte-ignore a11y_consider_explicit_label -->
 				<button
 					id="info"
