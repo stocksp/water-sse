@@ -198,6 +198,13 @@
 			console.log('is visible', isVisible);
 		}
 	};
+	async function handleHardReset() {
+		if (confirm('Are you sure you want to restart the water stream server?')) {
+			await fetch('/api/sse', { method: 'DELETE' });
+			// You don't even need to refresh. The existing SSE error handling
+			// will automatically detect the closed connection and reconnect!
+		}
+	}
 	function currentDistance() {
 		if (!store.getUiData.length) return 0;
 		// @ts-ignore
@@ -231,9 +238,9 @@
 	}
 </script>
 
-<div class="flex flex-col min-h-screen">
-	<main class="flex-1 flex flex-col p-4 w-full max-w-screen-xl mx-auto box-border">
-		<header class="flex justify-between">
+<div class="flex min-h-screen flex-col">
+	<main class="mx-auto box-border flex w-full max-w-screen-xl flex-1 flex-col p-4">
+		<header class="flex items-center justify-between">
 			<Navbar>
 				<NavHamburger />
 				<NavUl {activeUrl}>
@@ -242,33 +249,40 @@
 					<NavLi href="/climate" class="text-xl">Climate Report</NavLi>
 				</NavUl>
 			</Navbar>
-			<div class="relative h-12 w-12">
-				<!-- svelte-ignore a11y_consider_explicit_label -->
-				<button
-					id="info"
-					class="text-gray-500 hover:text-gray-700"
-					aria-describedby="info-tooltip"
-					onmouseover={toggleTooltip}
-					onmouseout={toggleTooltip}
-					onfocus={toggleTooltip}
-					onblur={toggleTooltip}
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-					</svg>
+
+			<div class="flex items-center gap-4 pr-2">
+				<button onclick={handleHardReset} class="rounded-md bg-red-100 px-3 py-1 text-sm font-bold whitespace-nowrap text-red-500 hover:text-red-700">
+					Restart Stream
 				</button>
 
-				<div
-					id="info-tooltip"
-					role="tooltip"
-					class="absolute z-10 w-[220px] {showTooltip
-						? 'visible opacity-100'
-						: 'invisible opacity-0'} top-2 left-[-220px] rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-700 shadow-lg transition-opacity duration-300"
-				>
-					<p>Branch: <b>{buildInfo.branchName}</b></p>
-					<p>Commit: <b>{shortCommitHash}</b></p>
-					<p>Build Date: <b>{formattedBuildDate}</b></p>
-					<div class="tooltip-arrow absolute top-2 left-[200px] h-2 w-2 rotate-45 transform border-t border-l border-gray-200 bg-gray-100"></div>
+				<div class="relative flex h-12 w-12 items-center justify-center">
+					<button
+						id="info"
+						aria-label="Build Information"
+						class="text-gray-500 hover:text-gray-700"
+						aria-describedby="info-tooltip"
+						onmouseover={toggleTooltip}
+						onmouseout={toggleTooltip}
+						onfocus={toggleTooltip}
+						onblur={toggleTooltip}
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+					</button>
+
+					<div
+						id="info-tooltip"
+						role="tooltip"
+						class="absolute z-10 w-[220px] {showTooltip
+							? 'visible opacity-100'
+							: 'invisible opacity-0'} top-2 left-[-220px] rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-700 shadow-lg transition-opacity duration-300"
+					>
+						<p>Branch: <b>{buildInfo.branchName}</b></p>
+						<p>Commit: <b>{shortCommitHash}</b></p>
+						<p>Build Date: <b>{formattedBuildDate}</b></p>
+						<div class="tooltip-arrow absolute top-2 left-[200px] h-2 w-2 rotate-45 transform border-t border-l border-gray-200 bg-gray-100"></div>
+					</div>
 				</div>
 			</div>
 		</header>

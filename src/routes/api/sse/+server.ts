@@ -99,33 +99,40 @@ async function fetchAndProcessWaterData() {
 	}
 }
 
-async function startIntervals() {
-	console.log('starting intervals');
-	if (!messageInterval) {
-		await fetchAndProcessWaterData()
-        messageInterval = setInterval(fetchAndProcessWaterData, 10000); // simplified
+function startIntervals() {
+    console.log('starting intervals');
+    
+    if (!messageInterval) {
+        // 1. Set the interval FIRST so subsequent rapid calls skip this block
+        messageInterval = setInterval(fetchAndProcessWaterData, 10000);
         console.log('!!!setting messageInterval');
+        // 2. Fire it off immediately (no need to await it here)
+        fetchAndProcessWaterData(); 
     }
 
-	if (!cleanupInterval) {
-		cleanupInterval = setInterval(() => {
-			const now = Date.now();
-			connections.forEach((connection, id) => {
-				if (now - connection.lastPing > 30000) {
-					connections.delete(id);
-					console.log('Removing connection:', id);
-				}
-			});
-		}, 60000);
-	}
-	if (!dataCleanupInterval) {
-		// Initial cleanup
-		filterOldData();
-
-		dataCleanupInterval = setInterval(() => {
-			filterOldData();
-		}, 120000); // Run every 2 minutes (120000 ms)
-	}
+    if (!cleanupInterval) {
+        cleanupInterval = setInterval(() => {
+            const now = Date.now();
+            connections.forEach((connection, id) => {
+                if (now - connection.lastPing > 30000) {
+                    connections.delete(id);
+                    console.log('Removing connection:', id);
+                }
+            });
+            // 3. BONUS FIX: Stop intervals if cleanup removes the last client
+            if (connections.size === 0) {
+                console.log('STOPPING... last client cleaned up');
+                stopIntervals();
+            }
+        }, 60000);
+    }
+    
+    if (!dataCleanupInterval) {
+        filterOldData();
+        dataCleanupInterval = setInterval(() => {
+            filterOldData();
+        }, 120000);
+    }
 }
 
 function stopIntervals() {
@@ -213,4 +220,21 @@ export const POST: RequestHandler = async ({ request }) => {
 		connection.lastPing = Date.now();
 	}
 	return new Response(null, { status: 204 });
+};
+
+export const DELETE: RequestHandler = () => {
+    console.log('Manual system reset triggered from UI');
+    stopIntervals();
+    
+    // Force close all open connections
+    connections.forEach((connection) => {
+        try { connection.controller.close(); } catch (e) {}
+    });
+    connections.clear();
+    
+    // Reset the stored data and lookback to fresh defaults
+    savedWaterData = { message: 'ok', distDocs: [], powerDocs: [] };
+    lookbackDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    
+    return new Response('System Reset Successfully', { status: 200 });
 };
